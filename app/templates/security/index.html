@@ -1,7 +1,54 @@
 {% extends "base.html" %}
 {% block title %}Security — {{ app_name }}{% endblock %}
+{% block head %}
+<style>
+  :root {
+    --page-bg: #F3F0EB;
+    --border: #E5DFD6;
+    --border-light: #F0EBE3;
+    --hero-from: #1E293B;
+    --hero-to: #0F172A;
+    --score-gold: #D4A843;
+    --pine: #4B7B6B;
+    --pine-bg: #E8F0EC;
+    --brass: #B8863C;
+    --brass-bg: #F5EDE0;
+    --brick: #B84A4A;
+    --brick-bg: #F5E8E8;
+    --steel: #5A7B9A;
+    --steel-bg: #EAF0F4;
+    --text-sec: #736B64;
+    --text-muted: #A0988F;
+  }
+  .page-security {
+    background-color: var(--page-bg);
+    min-height: 100%;
+  }
+  .card-row {
+    transition: all 0.15s ease;
+  }
+  .card-row:hover {
+    background-color: var(--border-light);
+  }
+  .card-row:not(:last-child) {
+    border-bottom: 1px solid var(--border-light);
+  }
+  .hex-pattern {
+    background-image: url("data:image/svg+xml,%3Csvg width='60' height='52' viewBox='0 0 60 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l25.98 15v30L30 60 4.02 45V15z' fill='none' stroke='rgba(255,255,255,0.04)' stroke-width='1'/%3E%3C/svg%3E");
+    background-size: 40px 35px;
+  }
+  .score-number {
+    font-size: 2.75rem;
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+  .vault-shield {
+    filter: drop-shadow(0 4px 12px rgba(212, 168, 67, 0.25));
+  }
+</style>
+{% endblock %}
 {% block content %}
-<div class="max-w-5xl mx-auto">
+<div class="page-security -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
 
   {% set security_score = 0 +
     (20 if current_user.totp_enabled else 0) +
@@ -11,199 +58,196 @@
     (20 if recent_logins|length > 0 else 0)
   %}
 
-  <div class="flex items-center justify-between mb-8">
-    <div>
-      <h1 class="text-2xl font-bold text-gray-900 tracking-tight">Security</h1>
-      <p class="text-gray-500 text-sm mt-1">Your account's security posture at a glance</p>
-    </div>
-    <a href="{{ url_for('core.two_factor_setup') if not current_user.totp_enabled else url_for('core.settings') }}"
-       class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-      </svg>
-      {{ 'Settings' if current_user.totp_enabled else 'Enable 2FA' }}
-    </a>
-  </div>
+  <div class="max-w-5xl mx-auto">
 
-  <div class="bg-gradient-to-br from-indigo-600 to-indigo-800 rounded-2xl p-6 mb-8 text-white">
-    <div class="flex items-center justify-between">
-      <div class="flex items-center gap-4">
-        <div class="w-14 h-14 rounded-xl bg-white/15 flex items-center justify-center backdrop-blur-sm">
-          <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+    <div class="flex items-center justify-between mb-6">
+      <div>
+        <h1 class="text-xl sm:text-2xl font-bold tracking-tight" style="color: var(--text)">Security</h1>
+        <p class="text-sm mt-0.5" style="color: var(--text-sec)">Your account's security posture at a glance</p>
+      </div>
+      <a href="{{ url_for('core.two_factor_setup') if not current_user.totp_enabled else url_for('core.settings') }}"
+         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-colors"
+         style="border-color: var(--border); color: var(--text); background: white;">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+        </svg>
+        {{ 'Settings' if current_user.totp_enabled else 'Enable 2FA' }}
+      </a>
+    </div>
+
+    <div class="relative overflow-hidden rounded-2xl mb-8 hex-pattern" style="background: linear-gradient(135deg, var(--hero-from), var(--hero-to));">
+      <div class="relative z-10 p-6 sm:p-8">
+        <div class="flex items-center gap-5">
+          <div class="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 vault-shield" style="background: rgba(212, 168, 67, 0.12);">
+            <svg class="w-8 h-8" style="color: var(--score-gold);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+            </svg>
+          </div>
+          <div>
+            <p class="text-sm font-medium uppercase tracking-widest" style="color: rgba(255,255,255,0.5);">Security Score</p>
+            <div class="flex items-baseline gap-1.5 mt-0.5">
+              <span class="font-bold score-number" style="color: var(--score-gold);">{{ security_score }}</span>
+              <span style="color: rgba(255,255,255,0.3); font-size: 1.25rem; font-weight: 300;">/ 100</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mb-8">
+      <div class="rounded-xl p-4 flex items-center gap-3" style="background: white; border: 1px solid var(--border);">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: {{ 'var(--pine-bg)' if current_user.totp_enabled else '#F0EBE3' }};">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: {{ 'var(--pine)' if current_user.totp_enabled else 'var(--text-muted)' }};">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
           </svg>
         </div>
         <div>
-          <p class="text-white/70 text-sm font-medium uppercase tracking-wider">Security Score</p>
-          <p class="text-3xl font-bold tracking-tight">{{ security_score }}/100</p>
+          <p class="text-sm font-medium" style="color: var(--text)">Two-Factor Auth</p>
+          <p class="text-xs" style="color: {{ 'var(--pine)' if current_user.totp_enabled else 'var(--text-muted)' }};">{{ 'Enabled' if current_user.totp_enabled else 'Disabled' }}</p>
         </div>
       </div>
-      <div class="hidden sm:block">
-        <div class="w-32 h-2 rounded-full bg-white/20 overflow-hidden">
-          <div class="h-full rounded-full bg-white transition-all duration-500"
-               style="width: {{ security_score }}%"></div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
-    <div class="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
-      <div class="w-9 h-9 rounded-lg {{ 'bg-emerald-100' if current_user.totp_enabled else 'bg-gray-100' }} flex items-center justify-center flex-shrink-0">
-        <svg class="w-4 h-4 {{ 'text-emerald-600' if current_user.totp_enabled else 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-        </svg>
-      </div>
-      <div>
-        <p class="text-sm font-medium text-gray-900">Two-Factor Auth</p>
-        <p class="text-xs {{ 'text-emerald-600' if current_user.totp_enabled else 'text-gray-400' }}">
-          {{ 'Enabled' if current_user.totp_enabled else 'Disabled' }}
-        </p>
-      </div>
-    </div>
-    <div class="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
-      <div class="w-9 h-9 rounded-lg {{ 'bg-emerald-100' if current_user.email_verified else 'bg-amber-100' }} flex items-center justify-center flex-shrink-0">
-        <svg class="w-4 h-4 {{ 'text-emerald-600' if current_user.email_verified else 'text-amber-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-        </svg>
-      </div>
-      <div>
-        <p class="text-sm font-medium text-gray-900">Email Verified</p>
-        <p class="text-xs {{ 'text-emerald-600' if current_user.email_verified else 'text-amber-600' }}">
-          {{ 'Verified' if current_user.email_verified else 'Pending' }}
-        </p>
-      </div>
-    </div>
-    <div class="bg-white rounded-xl border border-gray-200 p-4 flex items-center gap-3">
-      <div class="w-9 h-9 rounded-lg bg-gray-100 flex items-center justify-center flex-shrink-0">
-        <svg class="w-4 h-4 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
-        </svg>
-      </div>
-      <div>
-        <p class="text-sm font-medium text-gray-900">API Keys</p>
-        <p class="text-xs text-gray-500">{{ api_keys|length }} active</p>
-      </div>
-    </div>
-  </div>
-
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-        <h2 class="text-sm font-semibold text-gray-900">Recent Logins</h2>
-        {% if recent_logins %}
-        <span class="text-xs text-gray-400">{{ recent_logins|length }} events</span>
-        {% endif %}
-      </div>
-      <div class="divide-y divide-gray-50">
-        {% if recent_logins %}
-        {% for log in recent_logins %}
-        <div class="px-5 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
-          <div class="flex items-center gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 flex-shrink-0"></span>
-            <span class="text-sm text-gray-700 font-mono text-xs">{{ log.ip_address or 'Unknown IP' }}</span>
-          </div>
-          <span class="text-xs text-gray-400">{{ log.created_at | humanize }}</span>
-        </div>
-        {% endfor %}
-        {% else %}
-        <div class="px-5 py-8 text-center text-gray-400 text-sm">
-          <p>No recent logins</p>
-        </div>
-        {% endif %}
-      </div>
-    </div>
-
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-        <h2 class="text-sm font-semibold text-gray-900">Failed Login Attempts</h2>
-        {% if failed_logins %}
-        <span class="text-xs text-gray-400">{{ failed_logins|length }} events</span>
-        {% endif %}
-      </div>
-      <div class="divide-y divide-gray-50">
-        {% if failed_logins %}
-        {% for log in failed_logins %}
-        <div class="px-5 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
-          <div class="flex items-center gap-3">
-            <span class="w-1.5 h-1.5 rounded-full bg-red-400 flex-shrink-0"></span>
-            <span class="text-sm text-red-700 font-mono text-xs">{{ log.ip_address or 'Unknown IP' }}</span>
-          </div>
-          <span class="text-xs text-gray-400">{{ log.created_at | humanize }}</span>
-        </div>
-        {% endfor %}
-        {% else %}
-        <div class="px-5 py-8 text-center text-gray-400 text-sm">
-          <svg class="w-8 h-8 mx-auto mb-2 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+      <div class="rounded-xl p-4 flex items-center gap-3" style="background: white; border: 1px solid var(--border);">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: {{ 'var(--pine-bg)' if current_user.email_verified else 'var(--brass-bg)' }};">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: {{ 'var(--pine)' if current_user.email_verified else 'var(--brass)' }};">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
           </svg>
-          <p>No failed attempts</p>
         </div>
-        {% endif %}
+        <div>
+          <p class="text-sm font-medium" style="color: var(--text)">Email Verified</p>
+          <p class="text-xs" style="color: {{ 'var(--pine)' if current_user.email_verified else 'var(--brass)' }};">{{ 'Verified' if current_user.email_verified else 'Pending' }}</p>
+        </div>
       </div>
-    </div>
-  </div>
-
-  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-        <h2 class="text-sm font-semibold text-gray-900">Active Sessions</h2>
-        {% if active_sessions %}
-        <a href="{{ url_for('core.sessions') }}" class="text-xs text-indigo-600 hover:text-indigo-700 font-medium">View all</a>
-        {% endif %}
-      </div>
-      <div class="divide-y divide-gray-50">
-        {% if active_sessions %}
-        {% for s in active_sessions %}
-        <div class="px-5 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors">
-          <div class="flex items-center gap-3 min-w-0">
-            <span class="w-1.5 h-1.5 rounded-full bg-blue-400 flex-shrink-0"></span>
-            <div class="min-w-0">
-              <p class="text-sm text-gray-700 truncate">{{ s.browser or 'Unknown' }}</p>
-              <p class="text-xs text-gray-400">{{ s.ip_address or 'Unknown IP' }}</p>
-            </div>
-          </div>
-          <span class="text-xs text-gray-400 flex-shrink-0">{{ s.last_activity_at | humanize }}</span>
+      <div class="rounded-xl p-4 flex items-center gap-3" style="background: white; border: 1px solid var(--border);">
+        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: var(--steel-bg);">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: var(--steel);">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+          </svg>
         </div>
-        {% endfor %}
-        {% else %}
-        <div class="px-5 py-8 text-center text-gray-400 text-sm">
-          <p>No other active sessions</p>
+        <div>
+          <p class="text-sm font-medium" style="color: var(--text)">API Keys</p>
+          <p class="text-xs" style="color: var(--text-sec);">{{ api_keys|length }} active</p>
         </div>
-        {% endif %}
       </div>
     </div>
 
-    <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
-      <div class="px-5 py-4 border-b border-gray-100">
-        <h2 class="text-sm font-semibold text-gray-900">Activity Timeline</h2>
-      </div>
-      <div class="max-h-80 overflow-y-auto">
-        <div class="relative px-5 py-3">
-          {% if recent_audit %}
-          <div class="absolute left-8 top-0 bottom-0 w-px bg-gray-200"></div>
-          {% for log in recent_audit %}
-          <div class="flex items-start gap-4 pb-4 relative">
-            <div class="w-2 h-2 rounded-full bg-indigo-400 mt-2 flex-shrink-0 z-10 ring-2 ring-white"></div>
-            <div class="flex-1 min-w-0">
-              <p class="text-sm text-gray-700 font-medium">{{ log.action | replace('user.', '') | replace('org.', '') | replace('_', ' ') | title }}</p>
-              {% if log.log_metadata %}
-              <p class="text-xs text-gray-400 truncate">{{ log.log_metadata | tojson }}</p>
-              {% endif %}
-              <p class="text-xs text-gray-400 mt-0.5">{{ log.created_at | humanize }}</p>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
+      <div class="rounded-xl overflow-hidden" style="background: white; border: 1px solid var(--border);">
+        <div class="px-5 py-3.5 flex items-center justify-between" style="border-bottom: 1px solid var(--border-light);">
+          <h2 class="text-sm font-semibold" style="color: var(--text)">Recent Logins</h2>
+          {% if recent_logins %}
+          <span class="text-xs" style="color: var(--text-muted);">{{ recent_logins|length }} events</span>
+          {% endif %}
+        </div>
+        <div>
+          {% if recent_logins %}
+          {% for log in recent_logins %}
+          <div class="card-row px-5 py-2.5 flex items-center justify-between" style="border-left: 2px solid transparent;">
+            <div class="flex items-center gap-3">
+              <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background: var(--pine);"></span>
+              <span class="text-sm font-mono" style="color: var(--text); font-size: 0.8125rem;">{{ log.ip_address or 'Unknown IP' }}</span>
             </div>
+            <span class="text-xs" style="color: var(--text-muted);">{{ log.created_at | humanize }}</span>
           </div>
           {% endfor %}
           {% else %}
-          <div class="py-8 text-center text-gray-400 text-sm">
-            <p>No recent activity</p>
+          <div class="px-5 py-8 text-center text-sm" style="color: var(--text-muted);">
+            <p>No recent logins</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="rounded-xl overflow-hidden" style="background: white; border: 1px solid var(--border);">
+        <div class="px-5 py-3.5 flex items-center justify-between" style="border-bottom: 1px solid var(--border-light);">
+          <h2 class="text-sm font-semibold" style="color: var(--text)">Failed Login Attempts</h2>
+          {% if failed_logins %}
+          <span class="text-xs" style="color: var(--text-muted);">{{ failed_logins|length }} events</span>
+          {% endif %}
+        </div>
+        <div>
+          {% if failed_logins %}
+          {% for log in failed_logins %}
+          <div class="card-row px-5 py-2.5 flex items-center justify-between" style="border-left: 2px solid transparent;">
+            <div class="flex items-center gap-3">
+              <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background: var(--brick);"></span>
+              <span class="text-sm font-mono" style="color: var(--brick); font-size: 0.8125rem;">{{ log.ip_address or 'Unknown IP' }}</span>
+            </div>
+            <span class="text-xs" style="color: var(--text-muted);">{{ log.created_at | humanize }}</span>
+          </div>
+          {% endfor %}
+          {% else %}
+          <div class="px-5 py-8 text-center">
+            <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: var(--pine);">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+            </svg>
+            <p class="text-sm" style="color: var(--text-muted);">No failed attempts</p>
           </div>
           {% endif %}
         </div>
       </div>
     </div>
-  </div>
 
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
+      <div class="rounded-xl overflow-hidden" style="background: white; border: 1px solid var(--border);">
+        <div class="px-5 py-3.5 flex items-center justify-between" style="border-bottom: 1px solid var(--border-light);">
+          <h2 class="text-sm font-semibold" style="color: var(--text)">Active Sessions</h2>
+          {% if active_sessions %}
+          <a href="{{ url_for('core.sessions') }}" class="text-xs font-medium transition-colors hover:opacity-80" style="color: var(--steel);">View all</a>
+          {% endif %}
+        </div>
+        <div>
+          {% if active_sessions %}
+          {% for s in active_sessions %}
+          <div class="card-row px-5 py-2.5 flex items-center justify-between" style="border-left: 2px solid transparent;">
+            <div class="flex items-center gap-3 min-w-0">
+              <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background: var(--steel);"></span>
+              <div class="min-w-0">
+                <p class="text-sm truncate" style="color: var(--text);">{{ s.browser or 'Unknown' }}</p>
+                <p class="text-xs" style="color: var(--text-sec);">{{ s.ip_address or 'Unknown IP' }}</p>
+              </div>
+            </div>
+            <span class="text-xs flex-shrink-0" style="color: var(--text-muted);">{{ s.last_activity_at | humanize }}</span>
+          </div>
+          {% endfor %}
+          {% else %}
+          <div class="px-5 py-8 text-center text-sm" style="color: var(--text-muted);">
+            <p>No other active sessions</p>
+          </div>
+          {% endif %}
+        </div>
+      </div>
+
+      <div class="rounded-xl overflow-hidden" style="background: white; border: 1px solid var(--border);">
+        <div class="px-5 py-3.5" style="border-bottom: 1px solid var(--border-light);">
+          <h2 class="text-sm font-semibold" style="color: var(--text)">Activity Timeline</h2>
+        </div>
+        <div class="max-h-80 overflow-y-auto">
+          <div class="relative px-5 py-3">
+            {% if recent_audit %}
+            <div class="absolute left-[1.625rem] top-0 bottom-0" style="width: 1px; background: var(--border-light);"></div>
+            {% for log in recent_audit %}
+            <div class="flex items-start gap-4 pb-3.5 relative group">
+              <div class="w-2 h-2 rounded-full flex-shrink-0 z-10 mt-1.5" style="background: var(--steel); ring: 2px solid white; box-shadow: 0 0 0 2px white;"></div>
+              <div class="flex-1 min-w-0">
+                <p class="text-sm font-medium" style="color: var(--text);">{{ log.action | replace('user.', '') | replace('org.', '') | replace('_', ' ') | title }}</p>
+                {% if log.log_metadata %}
+                <p class="text-xs mt-0.5 truncate" style="color: var(--text-muted);">{{ log.log_metadata | tojson }}</p>
+                {% endif %}
+                <p class="text-xs mt-0.5" style="color: var(--text-muted);">{{ log.created_at | humanize }}</p>
+              </div>
+            </div>
+            {% endfor %}
+            {% else %}
+            <div class="py-8 text-center text-sm" style="color: var(--text-muted);">
+              <p>No recent activity</p>
+            </div>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
 </div>
 {% endblock %}
