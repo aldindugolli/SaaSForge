@@ -1,9 +1,8 @@
-from typing import Optional, List
-from datetime import datetime, timezone
 from functools import wraps
 
 from flask import request
 from flask_login import current_user
+
 from app.core.extensions import db
 from app.core.models import AuditLog
 
@@ -12,11 +11,11 @@ class AuditService:
     @staticmethod
     def log(
         action: str,
-        resource_type: Optional[str] = None,
-        resource_id: Optional[str] = None,
-        organization_id: Optional[str] = None,
-        metadata: Optional[dict] = None,
-        actor_id: Optional[str] = None,
+        resource_type: str | None = None,
+        resource_id: str | None = None,
+        organization_id: str | None = None,
+        metadata: dict | None = None,
+        actor_id: str | None = None,
     ) -> AuditLog:
         log_entry = AuditLog(
             actor_id=actor_id or (current_user.id if current_user.is_authenticated else None),
@@ -34,13 +33,13 @@ class AuditService:
 
     @staticmethod
     def get_logs(
-        organization_id: Optional[str] = None,
-        actor_id: Optional[str] = None,
-        action: Optional[str] = None,
-        resource_type: Optional[str] = None,
+        organization_id: str | None = None,
+        actor_id: str | None = None,
+        action: str | None = None,
+        resource_type: str | None = None,
         limit: int = 100,
         offset: int = 0,
-    ) -> List[AuditLog]:
+    ) -> list[AuditLog]:
         query = AuditLog.query
         if organization_id:
             query = query.filter_by(organization_id=organization_id)
@@ -53,7 +52,7 @@ class AuditService:
         return query.order_by(AuditLog.created_at.desc()).offset(offset).limit(limit).all()
 
     @staticmethod
-    def log_user_action(user_id: str, action: str, metadata: Optional[dict] = None):
+    def log_user_action(user_id: str, action: str, metadata: dict | None = None):
         return AuditService.log(
             action=action,
             resource_type="user",
@@ -63,7 +62,7 @@ class AuditService:
         )
 
 
-def audit_log(action: str, resource_type: Optional[str] = None):
+def audit_log(action: str, resource_type: str | None = None):
     """Decorator for auditing route actions."""
     def decorator(f):
         @wraps(f)

@@ -1,0 +1,52 @@
+{% extends "admin/base.html" %}
+{% block title %}Trial Analytics — Admin{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <h1 class="text-2xl font-bold text-gray-900 mb-6">Trial Conversion Analytics</h1>
+
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <p class="text-sm text-gray-500">Total Trials (90d)</p>
+      <p class="text-2xl font-bold">{{ stats.total_trials }}</p>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <p class="text-sm text-gray-500">Converted</p>
+      <p class="text-2xl font-bold text-green-600">{{ stats.converted }}</p>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <p class="text-sm text-gray-500">Expired / Lost</p>
+      <p class="text-2xl font-bold text-red-600">{{ stats.expired }}</p>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <p class="text-sm text-gray-500">Conversion Rate</p>
+      <p class="text-2xl font-bold text-brand-600">{{ stats.conversion_rate }}%</p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl border border-gray-200 p-5">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Trial Signups Trend</h2>
+    {% if stats.trend %}
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-gray-500 border-b border-gray-100">
+            <th class="pb-2">Date</th>
+            <th class="pb-2 text-right">Signups</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in stats.trend %}
+          <tr class="border-b border-gray-50">
+            <td class="py-2">{{ t.date }}</td>
+            <td class="py-2 text-right">{{ t.count }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    {% else %}
+    <p class="text-gray-500">No trial data for this period.</p>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

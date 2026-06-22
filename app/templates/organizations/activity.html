@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+{% block title %}Activity — {{ org.name }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <h1 class="text-2xl font-bold text-gray-900">Activity</h1>
+      <p class="text-sm text-gray-500">{{ org.name }}</p>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl border border-gray-200">
+    {% if logs.items %}
+    <div class="divide-y divide-gray-100">
+      {% for log in logs.items %}
+      <div class="flex items-start gap-4 p-4 hover:bg-gray-50">
+        <div class="w-2 h-2 rounded-full bg-brand-500 mt-2 flex-shrink-0"></div>
+        <div class="flex-1 min-w-0">
+          <p class="text-sm font-medium text-gray-900">{{ log.action }}</p>
+          {% if log.log_metadata %}
+          <p class="text-xs text-gray-500 truncate">{{ log.log_metadata | tojson }}</p>
+          {% endif %}
+          <p class="text-xs text-gray-400 mt-0.5">{{ log.created_at.strftime('%b %d, %Y %H:%M') }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+
+    {% if logs.pages > 1 %}
+    <div class="flex justify-center gap-2 p-4 border-t border-gray-100">
+      {% for page_num in logs.iter_pages() %}
+        {% if page_num %}
+        <a href="{{ url_for('organizations.activity', org_id=org.id, page=page_num) }}"
+           class="px-3 py-1 rounded text-sm {% if page_num == logs.page %}bg-brand-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+          {{ page_num }}
+        </a>
+        {% endif %}
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div class="p-8 text-center text-gray-500">
+      <p>No activity recorded yet.</p>
+    </div>
+    {% endif %}
+  </div>
+</div>
+{% endblock %}

@@ -1,5 +1,5 @@
-from flask import Blueprint, render_template, request, jsonify
-from flask_login import login_required, current_user
+from flask import Blueprint, jsonify, render_template, request
+from flask_login import login_required
 
 from app.services.analytics_service import AnalyticsService
 from app.services.decorators import org_required

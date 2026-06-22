@@ -1,9 +1,20 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app
-from flask_login import login_user, logout_user, login_required, current_user
 from authlib.integrations.flask_client import OAuth
+from flask import (
+    Blueprint,
+    current_app,
+    flash,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
+from flask_login import current_user, login_required, login_user, logout_user
 
+from app.core.extensions import db
 from app.services.auth_service import AuthService
-from app.services.base import ServiceError, ValidationError, PermissionError, NotFoundError
+from app.services.base import PermissionError, ServiceError, ValidationError
+from app.services.two_factor_service import TwoFactorService
 
 auth_bp = Blueprint("auth", __name__)
 oauth = OAuth()
@@ -61,6 +72,10 @@ def login():
                 ip_address=request.remote_addr,
                 user_agent=request.user_agent.string if request.user_agent else None,
             )
+            if user.totp_enabled:
+                session["2fa_user_id"] = user.id
+                session["2fa_remember"] = remember
+                return redirect(url_for("auth.two_factor_challenge"))
             login_user(user, remember=remember)
             next_page = request.args.get("next")
             flash("Welcome back!", "success")
@@ -69,6 +84,49 @@ def login():
             flash(e.message, "error")
 
     return render_template("auth/login.html")
+
+
+@auth_bp.route("/2fa-challenge", methods=["GET", "POST"])
+def two_factor_challenge():
+    if current_user.is_authenticated:
+        return redirect(url_for("core.dashboard"))
+
+    user_id = session.get("2fa_user_id")
+    if not user_id:
+        flash("Please log in first.", "info")
+        return redirect(url_for("auth.login"))
+
+    from app.core.models import User
+    user = db.session.get(User, user_id)
+    if not user or not user.totp_enabled:
+        session.pop("2fa_user_id", None)
+        return redirect(url_for("auth.login"))
+
+    if request.method == "POST":
+        code = request.form.get("code", "").strip()
+        if not code:
+            flash("Verification code is required.", "error")
+            return render_template("auth/two_factor_challenge.html")
+
+        valid = TwoFactorService.verify_code(user.totp_secret, code)
+        if not valid:
+            valid = TwoFactorService.verify_backup_code(user.totp_backup_codes, code)
+
+        if valid:
+            if valid is not True:
+                if user.totp_backup_codes:
+                    user.totp_backup_codes = [c for c in user.totp_backup_codes if c != code]
+                    db.session.commit()
+            login_user(user, remember=session.get("2fa_remember", False))
+            session.pop("2fa_user_id", None)
+            session.pop("2fa_remember", None)
+            flash("Welcome back!", "success")
+            next_page = request.args.get("next")
+            return redirect(next_page or url_for("core.dashboard"))
+        else:
+            flash("Invalid code. Try again.", "error")
+
+    return render_template("auth/two_factor_challenge.html")
 
 
 @auth_bp.route("/logout")
@@ -163,8 +221,8 @@ def google_callback():
     email = user_info.get("email", "")
     name = user_info.get("name", email.split("@")[0])
 
+    from app.core.extensions import cache_service, db
     from app.core.models import User
-    from app.core.extensions import db
 
     user = User.query.filter_by(google_id=google_id).first()
     if not user:
@@ -181,8 +239,9 @@ def google_callback():
             db.session.add(user)
             db.session.flush()
 
-            from app.core.models import Organization, Membership, Role, PlanType
             import secrets
+
+            from app.core.models import Membership, Organization, PlanType, Role
 
             org = Organization(
                 name=f"{name}'s Workspace",
@@ -203,6 +262,7 @@ def google_callback():
             )
 
         db.session.commit()
+        cache_service.invalidate_analytics()
 
     login_user(user, remember=True)
     flash("Logged in with Google!", "success")

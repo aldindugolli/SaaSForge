@@ -27,6 +27,37 @@ jobs:
       - run: black --check app/
       - run: mypy app/ --ignore-missing-imports
 
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+          cache: "pip"
+      - run: pip install -r requirements.txt
+      - name: Bandit SAST
+        run: |
+          pip install bandit
+          bandit -r app/ -f json -o bandit-report.json || true
+      - name: Safety Dependency Check
+        run: |
+          pip install safety
+          safety check --full-report || true
+      - name: Gitleaks Secrets Scan
+        uses: gitleaks/gitleaks-action@v2
+        env:
+          GITLEAKS_LICENSE: ${{ secrets.GITLEAKS_LICENSE }}
+        continue-on-error: true
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            bandit-report.json
+            gl-report.*
+
   test:
     runs-on: ubuntu-latest
     services:

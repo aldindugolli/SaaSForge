@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}Background Jobs — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto">
+  <div class="flex items-center justify-between mb-6">
+    <h1 class="text-2xl font-bold text-gray-900">Background Jobs</h1>
+    <form method="POST" action="{{ url_for('admin.enqueue_job') }}" class="flex gap-2">
+      <select name="job_name" class="px-3 py-2 border border-gray-300 rounded-lg text-sm">
+        <option value="analytics">Analytics Refresh</option>
+        <option value="cleanup">Cleanup Expired Data</option>
+      </select>
+      <button type="submit" class="px-4 py-2 bg-brand-600 text-white rounded-lg hover:bg-brand-700 transition text-sm">
+        Enqueue
+      </button>
+    </form>
+  </div>
+
+  <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+    <table class="w-full">
+      <thead>
+        <tr class="bg-gray-50 text-left text-sm font-medium text-gray-500">
+          <th class="px-4 py-3">Name</th>
+          <th class="px-4 py-3">Status</th>
+          <th class="px-4 py-3">Queue</th>
+          <th class="px-4 py-3">Scheduled</th>
+          <th class="px-4 py-3">Finished</th>
+          <th class="px-4 py-3">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100 text-sm">
+        {% for record in records.items %}
+        <tr class="hover:bg-gray-50">
+          <td class="px-4 py-3 font-medium">{{ record.name }}</td>
+          <td class="px-4 py-3">
+            <span class="px-2 py-0.5 rounded-full text-xs font-medium
+              {% if record.status == 'completed' %}bg-green-100 text-green-700
+              {% elif record.status == 'failed' %}bg-red-100 text-red-700
+              {% elif record.status == 'queued' %}bg-blue-100 text-blue-700
+              {% elif record.status == 'scheduled' %}bg-yellow-100 text-yellow-700
+              {% elif record.status == 'canceled' %}bg-gray-100 text-gray-500
+              {% else %}bg-gray-100 text-gray-700{% endif %}">
+              {{ record.status }}
+            </span>
+          </td>
+          <td class="px-4 py-3 text-gray-500">{{ record.queue }}</td>
+          <td class="px-4 py-3 text-gray-500">{{ record.scheduled_at | humanize if record.scheduled_at else '-' }}</td>
+          <td class="px-4 py-3 text-gray-500">{{ record.finished_at | humanize if record.finished_at else '-' }}</td>
+          <td class="px-4 py-3">
+            {% if record.status in ('queued', 'scheduled') and record.rq_job_id %}
+            <form method="POST" action="{{ url_for('admin.cancel_job', job_id=record.id) }}" class="inline">
+              <button type="submit" class="text-red-600 hover:text-red-800 text-xs">Cancel</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+
+  {% if records.pages > 1 %}
+  <div class="flex justify-center mt-6 gap-2">
+    {% for page_num in records.iter_pages() %}
+      {% if page_num %}
+        <a href="{{ url_for('admin.jobs', page=page_num) }}"
+           class="px-3 py-1 rounded {% if page_num == records.page %}bg-brand-600 text-white{% else %}bg-gray-100 text-gray-700 hover:bg-gray-200{% endif %}">
+          {{ page_num }}
+        </a>
+      {% endif %}
+    {% endfor %}
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

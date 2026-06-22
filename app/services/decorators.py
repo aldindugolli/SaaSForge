@@ -1,7 +1,9 @@
 from functools import wraps
-from flask import abort, request, jsonify
+
+from flask import abort, request
 from flask_login import current_user
-from app.core.models import Role, Membership
+
+from app.core.models import Membership, Role
 
 
 def require_role(role: Role):

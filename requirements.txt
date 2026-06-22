@@ -40,6 +40,10 @@ flasgger==0.9.7.1
 apispec==6.6.1
 apispec-webframeworks==1.2.0
 
+# Security
+pyotp>=2.10
+qrcode[pil]>=7.4
+
 # Admin
 sqladmin>=0.27,<1.0
 

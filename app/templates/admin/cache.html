@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Cache Management{% endblock %}
+{% block content %}
+<div class="max-w-2xl">
+  <h1 class="text-2xl font-bold text-gray-900 mb-6">Cache Management</h1>
+
+  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
+    <div class="flex items-center justify-between mb-4">
+      <h2 class="text-lg font-semibold text-gray-900">Status</h2>
+      <span class="px-3 py-1 text-sm rounded-full {% if cache_available %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
+        {{ "Redis Connected" if cache_available else "In-Memory Fallback" }}
+      </span>
+    </div>
+  </div>
+
+  <form method="POST" class="space-y-4">
+    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">Actions</h2>
+
+      <button type="submit" name="action" value="clear_all"
+              class="w-full mb-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+              onclick="return confirm('Clear entire cache?')">
+        Clear All Cache
+      </button>
+
+      <button type="submit" name="action" value="clear_analytics"
+              class="w-full mb-3 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition">
+        Clear Analytics Cache
+      </button>
+
+      <div class="flex gap-2">
+        <input type="text" name="org_id" placeholder="Organization ID"
+               class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+        <button type="submit" name="action" value="clear_org"
+                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+          Clear Org Cache
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
+{% endblock %}

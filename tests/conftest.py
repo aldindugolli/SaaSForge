@@ -7,6 +7,7 @@ from app.core.config import Config
 class TestConfig(Config):
     TESTING = True
     SQLALCHEMY_DATABASE_URI = "sqlite:///:memory:"
+    SQLALCHEMY_ENGINE_OPTIONS = {"pool_pre_ping": True}
     WTF_CSRF_ENABLED = False
     MAIL_SUPPRESS_SEND = True
     RATELIMIT_ENABLED = False

@@ -88,6 +88,34 @@
             <a href="/auth/resend-verification" class="text-brand-600 hover:text-brand-700 font-medium">Resend verification email</a>
             {% endif %}
         </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h2 class="text-lg font-semibold mb-4">Two-Factor Authentication</h2>
+            {% if current_user.totp_enabled %}
+            <div class="flex items-center justify-between">
+                <div>
+                    <div class="flex items-center gap-2 text-green-600">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                        <span class="font-medium">Two-factor authentication is enabled</span>
+                    </div>
+                </div>
+                <form method="POST" action="{{ url_for('core.two_factor_disable') }}" class="flex items-center gap-2">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="text" name="code" placeholder="000000" inputmode="numeric" pattern="[0-9]*" required
+                           class="w-24 px-2 py-1 text-sm border border-gray-300 rounded-lg">
+                    <button type="submit" class="text-sm text-red-600 hover:text-red-800 font-medium">Disable</button>
+                </form>
+            </div>
+            {% else %}
+            <p class="text-gray-500 mb-3">Add an extra layer of security to your account.</p>
+            <a href="{{ url_for('core.two_factor_setup') }}"
+               class="bg-brand-600 text-white px-4 py-2 rounded-lg text-sm font-medium hover:bg-brand-700 inline-block">
+                Enable Two-Factor Authentication
+            </a>
+            {% endif %}
+        </div>
     </div>
 </div>
 {% endblock %}

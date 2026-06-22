@@ -1,5 +1,6 @@
 """Background job definitions for RQ workers."""
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime
+
 from app.core.extensions import rq
 from app.services.email_service import EmailService
 from app.services.notification_service import NotificationService
@@ -31,7 +32,7 @@ def cleanup_expired_data_job():
     from app.core.extensions import db
     from app.core.models import Invitation
 
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
 
     # Clean expired invitations
     expired = Invitation.query.filter(
@@ -49,9 +50,9 @@ def cleanup_expired_data_job():
 @rq.job("saasforge-jobs")
 def generate_weekly_report_job():
     """Generate and send weekly analytics report to admins."""
+
     from app.core.models import User
     from app.services.analytics_service import AnalyticsService
-    from flask import render_template
 
     admins = User.query.filter_by(is_admin=True).all()
     stats = AnalyticsService.get_dashboard_stats()

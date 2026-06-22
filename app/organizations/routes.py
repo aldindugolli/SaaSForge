@@ -1,11 +1,11 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash
-from flask_login import login_required, current_user
+from flask import Blueprint, flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
 
-from app.core.models import Invitation, Membership
 from app.core.extensions import db
-from app.services.org_service import OrganizationService
-from app.services.base import ServiceError, ValidationError, PermissionError, NotFoundError
+from app.core.models import AuditLog, Invitation
+from app.services.base import NotFoundError, PermissionError, ServiceError, ValidationError
 from app.services.decorators import require_owner
+from app.services.org_service import OrganizationService
 
 org_bp = Blueprint("organizations", __name__)
 
@@ -45,11 +45,14 @@ def settings(org_id):
         name = request.form.get("name", "").strip()
         description = request.form.get("description", "").strip()
         website = request.form.get("website", "").strip()
+        brand_color = request.form.get("brand_color", "").strip()
 
         if name:
             org.name = name
         org.description = description
         org.website = website
+        if brand_color:
+            org.brand_color = brand_color
         db.session.commit()
         flash("Organization settings updated.", "success")
         return redirect(url_for("organizations.settings", org_id=org.id))
@@ -167,3 +170,20 @@ def transfer_ownership(org_id):
         flash(e.message, "error")
 
     return redirect(url_for("organizations.settings", org_id=org_id))
+
+
+@org_bp.route("/<org_id>/activity")
+@login_required
+def activity(org_id):
+    from app.core.models import Organization
+    org = Organization.query.get_or_404(org_id)
+    if not current_user.belongs_to(org):
+        flash("Access denied.", "error")
+        return redirect(url_for("core.dashboard"))
+
+    page = request.args.get("page", 1, type=int)
+    logs = AuditLog.query.filter_by(organization_id=org_id).order_by(
+        AuditLog.created_at.desc()
+    ).paginate(page=page, per_page=30, error_out=False)
+
+    return render_template("organizations/activity.html", org=org, logs=logs)

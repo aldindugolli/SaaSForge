@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Sessions — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto">
+  <h1 class="text-2xl font-bold text-gray-900 mb-6">Active Sessions</h1>
+
+  <div class="space-y-4">
+    {% for session in sessions %}
+    <div class="bg-white rounded-xl border border-gray-200 p-5 flex items-center justify-between">
+      <div class="flex items-center gap-4">
+        <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+          <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+          </svg>
+        </div>
+        <div>
+          <p class="font-medium">
+            {{ session.browser or 'Unknown browser' }} — {{ session.os or 'Unknown OS' }}
+            {% if session.is_current %}
+            <span class="ml-2 px-2 py-0.5 text-xs bg-green-100 text-green-700 rounded-full">Current</span>
+            {% endif %}
+          </p>
+          <p class="text-sm text-gray-500">
+            {{ session.device_name or 'Unknown device' }}
+            &middot; {{ session.ip_address or 'Unknown IP' }}
+            {% if session.location %} &middot; {{ session.location }}{% endif %}
+          </p>
+          <p class="text-xs text-gray-400">
+            Last active: {{ session.last_activity_at | humanize if session.last_activity_at else 'N/A' }}
+            &middot; Created: {{ session.created_at | humanize }}
+          </p>
+        </div>
+      </div>
+      {% if not session.is_current %}
+      <form method="POST" action="{{ url_for('core.revoke_session', session_id=session.id) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="text-sm text-red-600 hover:text-red-800 font-medium">Revoke</button>
+      </form>
+      {% endif %}
+    </div>
+    {% else %}
+    <div class="bg-white rounded-xl border border-gray-200 p-8 text-center text-gray-500">
+      <p>No sessions found.</p>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if sessions|length > 1 %}
+  <div class="mt-6">
+    <form method="POST" action="{{ url_for('core.revoke_all_sessions') }}" onsubmit="return confirm('Revoke all other sessions?')">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="text-sm text-red-600 hover:text-red-800 font-medium">Revoke all other sessions</button>
+    </form>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

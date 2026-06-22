@@ -1,15 +1,19 @@
+from datetime import UTC
+
 from flask import Flask
-from flask_migrate import Migrate
-from flask_limiter import Limiter
-from flask_limiter.util import get_remote_address
-from flask_wtf.csrf import CSRFProtect
-from flask_login import LoginManager
-from sqlalchemy import event
-from sqlalchemy.engine import Engine
 
 from app.core.config import Config
-from app.core.extensions import db, login_manager, csrf, limiter, migrate, rq, cache
 from app.core.context_processors import inject_global_context
+from app.core.extensions import (
+    cache,
+    csrf,
+    db,
+    limiter,
+    login_manager,
+    migrate,
+    rq,
+    swagger,
+)
 
 
 def create_app(config_class=Config):
@@ -23,6 +27,7 @@ def create_app(config_class=Config):
     register_template_filters(app)
     register_shell_context(app)
     register_cli_commands(app)
+    register_scheduled_jobs(app)
     init_oauth(app)
 
     return app
@@ -37,24 +42,26 @@ def initialize_extensions(app):
     limiter.init_app(app)
     rq.init_app(app)
     cache.init_app(app)
+    swagger.init_app(app)
 
     login_manager.login_view = "auth.login"
     login_manager.login_message_category = "info"
     login_manager.login_message = "Please log in to access this page."
 
     with app.app_context():
-        from app.core import models
+        import app.core.models  # noqa: F401  ensure models registered
 
 
 def register_blueprints(app):
-    from app.auth.routes import auth_bp
-    from app.organizations.routes import org_bp
-    from app.billing.routes import billing_bp
     from app.admin.routes import admin_bp
     from app.analytics.routes import analytics_bp
-    from app.notifications.routes import notifications_bp
     from app.api.routes import api_bp
+    from app.auth.routes import auth_bp
+    from app.billing.routes import billing_bp
     from app.core.routes import core_bp
+    from app.notifications.routes import notifications_bp
+    from app.organizations.routes import org_bp
+    from app.security.routes import security_bp
 
     app.register_blueprint(core_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
@@ -64,6 +71,7 @@ def register_blueprints(app):
     app.register_blueprint(analytics_bp, url_prefix="/analytics")
     app.register_blueprint(notifications_bp, url_prefix="/notifications")
     app.register_blueprint(api_bp, url_prefix="/api/v1")
+    app.register_blueprint(security_bp)
 
 
 def register_error_handlers(app):
@@ -87,12 +95,12 @@ def register_context_processors(app):
 
 
 def register_template_filters(app):
-    from datetime import datetime, timezone
+    from datetime import datetime
 
     def humanize_date(dt):
         if not dt:
             return ""
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         diff = now - dt
         seconds = diff.total_seconds()
         if seconds < 60:
@@ -119,7 +127,7 @@ def init_oauth(app):
 def register_shell_context(app):
     @app.shell_context_processor
     def shell_context():
-        from app.core.models import User, Organization, Membership, Subscription
+        from app.core.models import Membership, Organization, Subscription, User
 
         return {
             "db": db,
@@ -131,8 +139,13 @@ def register_shell_context(app):
 
 
 def register_cli_commands(app):
-    from app.core.cli import seed_data, create_admin, list_routes
+    from app.core.cli import create_admin, list_routes, schedule_jobs, seed_data
 
     app.cli.add_command(seed_data)
     app.cli.add_command(create_admin)
     app.cli.add_command(list_routes)
+    app.cli.add_command(schedule_jobs)
+
+
+def register_scheduled_jobs(app):
+    pass  # Jobs are scheduled via `flask schedule-jobs` CLI command

@@ -1,4 +1,3 @@
-from typing import Optional, List
 from flask import current_app, render_template
 
 
@@ -8,7 +7,7 @@ class EmailService:
         to: str,
         subject: str,
         html_body: str,
-        from_email: Optional[str] = None,
+        from_email: str | None = None,
     ) -> bool:
         from_email = from_email or current_app.config.get("MAIL_DEFAULT_SENDER", "noreply@saasforge.com")
 
@@ -22,7 +21,7 @@ class EmailService:
         # In production, use SendGrid
         try:
             import sendgrid
-            from sendgrid.helpers.mail import Mail, Email, To, Content
+            from sendgrid.helpers.mail import Content, Email, Mail, To
 
             sg = sendgrid.SendGridAPIClient(api_key=current_app.config["SENDGRID_API_KEY"])
             mail = Mail(
@@ -63,6 +62,6 @@ class EmailService:
         return EmailService.send_email(to, f"You've been invited to join {org_name}", html)
 
     @staticmethod
-    def send_subscription_receipt(to: str, plan_name: str, amount: int, pdf_url: Optional[str] = None) -> bool:
+    def send_subscription_receipt(to: str, plan_name: str, amount: int, pdf_url: str | None = None) -> bool:
         html = render_template("emails/subscription_receipt.html", plan=plan_name, amount=amount)
         return EmailService.send_email(to, f"Receipt for {plan_name} plan", html)

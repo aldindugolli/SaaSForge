@@ -1,8 +1,10 @@
-import uuid
 import enum
-from datetime import datetime, timezone
+import uuid
+from datetime import UTC, datetime
+
 from flask_login import UserMixin
-from werkzeug.security import generate_password_hash, check_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
+
 from app.core.extensions import db, login_manager
 
 
@@ -11,16 +13,16 @@ def gen_uuid():
 
 
 def utcnow():
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
-class Role(str, enum.Enum):
+class Role(enum.StrEnum):
     OWNER = "owner"
     ADMIN = "admin"
     MEMBER = "member"
 
 
-class SubscriptionStatus(str, enum.Enum):
+class SubscriptionStatus(enum.StrEnum):
     ACTIVE = "active"
     TRIALING = "trialing"
     PAST_DUE = "past_due"
@@ -30,18 +32,18 @@ class SubscriptionStatus(str, enum.Enum):
     UNPAID = "unpaid"
 
 
-class PlanType(str, enum.Enum):
+class PlanType(enum.StrEnum):
     FREE = "free"
     PRO = "pro"
     BUSINESS = "business"
 
 
-class APIKeyType(str, enum.Enum):
+class APIKeyType(enum.StrEnum):
     TEST = "test"
     LIVE = "live"
 
 
-class NotificationType(str, enum.Enum):
+class NotificationType(enum.StrEnum):
     INFO = "info"
     SUCCESS = "success"
     WARNING = "warning"
@@ -77,6 +79,10 @@ class User(UserMixin, db.Model):
     login_count = db.Column(db.Integer, default=0, nullable=False)
 
     google_id = db.Column(db.String(255), unique=True, nullable=True)
+
+    totp_secret = db.Column(db.String(32), nullable=True)
+    totp_enabled = db.Column(db.Boolean, default=False, nullable=False, server_default=db.text("0"))
+    totp_backup_codes = db.Column(db.JSON, nullable=True)
 
     password_reset_token = db.Column(db.String(255), nullable=True)
     password_reset_sent_at = db.Column(db.DateTime, nullable=True)
@@ -137,6 +143,7 @@ class Organization(db.Model):
     name = db.Column(db.String(255), nullable=False)
     slug = db.Column(db.String(255), unique=True, nullable=False, index=True)
     logo_url = db.Column(db.String(512), nullable=True)
+    brand_color = db.Column(db.String(7), nullable=True, default="#6366f1")
     description = db.Column(db.Text, nullable=True)
     website = db.Column(db.String(512), nullable=True)
     timezone = db.Column(db.String(50), default="UTC")
@@ -411,6 +418,75 @@ class FeatureFlag(db.Model):
 
     def __repr__(self):
         return f"<FeatureFlag {self.key} ({'on' if self.enabled else 'off'})>"
+
+
+class UserSession(db.Model):
+    __tablename__ = "user_sessions"
+
+    id = db.Column(db.String(36), primary_key=True, default=gen_uuid)
+    user_id = db.Column(db.String(36), db.ForeignKey("users.id"), nullable=False)
+    session_id = db.Column(db.String(255), unique=True, nullable=False, index=True)
+    ip_address = db.Column(db.String(45), nullable=True)
+    user_agent = db.Column(db.Text, nullable=True)
+    device_name = db.Column(db.String(255), nullable=True)
+    browser = db.Column(db.String(100), nullable=True)
+    os = db.Column(db.String(100), nullable=True)
+    location = db.Column(db.String(255), nullable=True)
+    is_current = db.Column(db.Boolean, default=False, nullable=False)
+    last_activity_at = db.Column(db.DateTime, nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
+
+    user = db.relationship("User", backref="sessions")
+
+    def __repr__(self):
+        return f"<UserSession {self.browser} ({self.ip_address})>"
+
+
+class JobRecord(db.Model):
+    __tablename__ = "job_records"
+
+    id = db.Column(db.String(36), primary_key=True, default=gen_uuid)
+    name = db.Column(db.String(100), nullable=False, index=True)
+    queue = db.Column(db.String(50), nullable=False, default="saasforge-jobs")
+    status = db.Column(db.String(20), nullable=False, default="queued")
+    rq_job_id = db.Column(db.String(255), unique=True, nullable=True)
+    scheduled_at = db.Column(db.DateTime, nullable=True)
+    started_at = db.Column(db.DateTime, nullable=True)
+    finished_at = db.Column(db.DateTime, nullable=True)
+    result = db.Column(db.JSON, nullable=True)
+    error = db.Column(db.Text, nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
+
+    def __repr__(self):
+        return f"<JobRecord {self.name} ({self.status})>"
+
+
+class ApiRequestLog(db.Model):
+    __tablename__ = "api_request_logs"
+
+    id = db.Column(db.String(36), primary_key=True, default=gen_uuid)
+    user_id = db.Column(db.String(36), db.ForeignKey("users.id"), nullable=True)
+    organization_id = db.Column(db.String(36), db.ForeignKey("organizations.id"), nullable=True)
+    api_key_id = db.Column(db.String(36), db.ForeignKey("api_keys.id"), nullable=True)
+    method = db.Column(db.String(10), nullable=False)
+    endpoint = db.Column(db.String(255), nullable=False)
+    status_code = db.Column(db.Integer, nullable=False)
+    ip_address = db.Column(db.String(45), nullable=True)
+    user_agent = db.Column(db.Text, nullable=True)
+    response_time_ms = db.Column(db.Integer, nullable=True)
+    created_at = db.Column(db.DateTime, nullable=False, default=utcnow)
+
+    user = db.relationship("User", backref="api_requests")
+    organization = db.relationship("Organization")
+    api_key = db.relationship("APIKey", backref="request_logs")
+
+    __table_args__ = (
+        db.Index("idx_api_request_logs_created_at", "created_at"),
+        db.Index("idx_api_request_logs_endpoint", "endpoint"),
+    )
+
+    def __repr__(self):
+        return f"<ApiRequestLog {self.method} {self.endpoint} ({self.status_code})>"
 
 
 @login_manager.user_loader

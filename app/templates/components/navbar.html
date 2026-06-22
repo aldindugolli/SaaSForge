@@ -1,4 +1,13 @@
-<nav class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 fixed top-0 left-0 right-0 z-40 h-16">
+{% if is_impersonating %}
+<div class="fixed top-0 left-0 right-0 z-50 bg-red-600 text-white text-center py-1.5 text-sm font-medium flex items-center justify-center gap-3">
+    <span>🔒 Impersonating {{ current_user.email }} — {{ impersonation_reason }}</span>
+    <form action="/impersonate/stop" method="POST" class="inline">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="underline hover:no-underline text-white/80 hover:text-white">Stop Impersonation</button>
+    </form>
+</div>
+{% endif %}
+<nav class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 fixed top-0 left-0 right-0 z-40 h-16" style="top: {{ '2rem' if is_impersonating else '0' }};">
     <div class="px-4 h-full flex items-center justify-between">
         <div class="flex items-center gap-4">
             <button onclick="document.getElementById('sidebar').classList.toggle('-translate-x-full')" class="lg:hidden p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">

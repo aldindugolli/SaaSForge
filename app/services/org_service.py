@@ -1,14 +1,16 @@
-from typing import Optional, List
-from datetime import datetime, timezone, timedelta
-import secrets
+from datetime import UTC, datetime, timedelta
 
-from app.core.extensions import db
+from app.core.extensions import cache, cache_service, db
 from app.core.models import (
-    User, Organization, Membership, Invitation, AuditLog,
-    Role, PlanType,
+    AuditLog,
+    Invitation,
+    Membership,
+    Organization,
+    PlanType,
+    Role,
+    User,
 )
-from app.services.base import ServiceError, ValidationError, NotFoundError, PermissionError
-from app.services.notification_service import NotificationService
+from app.services.base import NotFoundError, PermissionError, ValidationError
 
 
 class OrganizationService:
@@ -50,6 +52,8 @@ class OrganizationService:
         )
 
         db.session.commit()
+        cache_service.invalidate_org_data(str(org.id))
+        cache_service.invalidate_analytics()
         return org
 
     @staticmethod
@@ -63,10 +67,14 @@ class OrganizationService:
         Membership.query.filter_by(user_id=user.id).update({"is_current": False})
         membership.is_current = True
         db.session.commit()
+        cache_service.invalidate_org_data(organization_id)
         return True
 
     @staticmethod
-    def get_members(organization_id: str) -> List[dict]:
+    def get_members(organization_id: str) -> list[dict]:
+        cached = cache.get("org", f"members:{organization_id}")
+        if cached is not None:
+            return cached
         memberships = Membership.query.filter_by(organization_id=organization_id).all()
         result = []
         for m in memberships:
@@ -80,6 +88,7 @@ class OrganizationService:
                 "role": m.role,
                 "joined_at": m.joined_at.isoformat() if m.joined_at else None,
             })
+        cache.set("org", f"members:{organization_id}", result, 300)
         return result
 
     @staticmethod
@@ -113,6 +122,8 @@ class OrganizationService:
         )
 
         db.session.commit()
+        cache_service.invalidate_org_data(str(org.id))
+        cache_service.invalidate_analytics()
         return True
 
     @staticmethod
@@ -147,6 +158,8 @@ class OrganizationService:
         )
 
         db.session.commit()
+        cache_service.invalidate_org_data(str(organization_id))
+        cache_service.invalidate_analytics()
         return True
 
     @staticmethod
@@ -184,6 +197,8 @@ class OrganizationService:
         )
 
         db.session.commit()
+        cache_service.invalidate_org_data(str(organization_id))
+        cache_service.invalidate_analytics()
         return True
 
     @staticmethod
@@ -206,7 +221,7 @@ class OrganizationService:
             email=email,
             revoked=False,
             accepted_at=None,
-        ).filter(Invitation.expires_at > datetime.now(timezone.utc)).first()
+        ).filter(Invitation.expires_at > datetime.now(UTC)).first()
         if existing:
             raise ValidationError("An invitation has already been sent to this email.")
 
@@ -215,7 +230,7 @@ class OrganizationService:
             email=email,
             role=role,
             invited_by_id=invited_by.id,
-            expires_at=datetime.now(timezone.utc) + timedelta(days=7),
+            expires_at=datetime.now(UTC) + timedelta(days=7),
         )
         db.session.add(invitation)
 
@@ -256,7 +271,7 @@ class OrganizationService:
         if org.member_count >= org.max_members:
             raise ValidationError("Organization has reached its member limit.")
 
-        invitation.accepted_at = datetime.now(timezone.utc)
+        invitation.accepted_at = datetime.now(UTC)
 
         Membership(
             user_id=user.id,
@@ -274,6 +289,8 @@ class OrganizationService:
         )
 
         db.session.commit()
+        cache_service.invalidate_org_data(str(org.id))
+        cache_service.invalidate_analytics()
         return org
 
     @staticmethod
@@ -287,6 +304,7 @@ class OrganizationService:
 
         invitation.revoked = True
         db.session.commit()
+        cache_service.invalidate_org_data(str(invitation.organization_id))
         return True
 
     @staticmethod

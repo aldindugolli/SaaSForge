@@ -64,18 +64,32 @@ class Config:
     STRIPE_BUSINESS_PRICE_ID = os.environ.get("STRIPE_BUSINESS_PRICE_ID", "")
 
     STRIPE_PLANS = {
-        "free": {"name": "Free", "price": 0, "price_id": None, "features": ["1 member", "1 project", "Basic support"]},
+        "free": {
+            "name": "Free",
+            "price": 0,
+            "price_id": None,
+            "max_members": 1,
+            "max_projects": 1,
+            "features": ["Basic support"],
+            "entitlements": {"api_access": False, "analytics": False, "custom_integrations": False, "sla": False},
+        },
         "pro": {
             "name": "Pro",
             "price": 29,
             "price_id": os.environ.get("STRIPE_PRO_PRICE_ID", ""),
-            "features": ["5 members", "10 projects", "Priority support", "API access", "Analytics"],
+            "max_members": 5,
+            "max_projects": 10,
+            "features": ["Priority support", "API access", "Analytics"],
+            "entitlements": {"api_access": True, "analytics": True, "custom_integrations": False, "sla": False},
         },
         "business": {
             "name": "Business",
             "price": 99,
             "price_id": os.environ.get("STRIPE_BUSINESS_PRICE_ID", ""),
-            "features": ["Unlimited members", "Unlimited projects", "Dedicated support", "API access", "Advanced analytics", "Custom integrations", "SLA"],
+            "max_members": 9999,
+            "max_projects": 9999,
+            "features": ["Dedicated support", "API access", "Advanced analytics", "Custom integrations", "SLA"],
+            "entitlements": {"api_access": True, "analytics": True, "custom_integrations": True, "sla": True},
         },
     }
 

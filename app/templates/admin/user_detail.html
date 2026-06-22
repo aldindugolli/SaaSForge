@@ -27,7 +27,13 @@
                     </div>
                 </div>
             </div>
-            <div class="flex items-center gap-2">
+            <div class="flex items-center gap-2 flex-wrap">
+                <form method="POST" action="/admin/impersonate" class="inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="hidden" name="email" value="{{ user.email }}">
+                    <input type="text" name="reason" placeholder="Impersonation reason..." class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 w-40" required>
+                    <button type="submit" class="bg-amber-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-amber-700">Impersonate</button>
+                </form>
                 {% if not user.is_banned %}
                 <form method="POST" action="/admin/users/{{ user.id }}/ban" class="inline">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">

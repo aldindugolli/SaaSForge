@@ -1,6 +1,7 @@
-from typing import Optional, List, Type, TypeVar, Generic
-from flask import current_app
+from typing import TypeVar
+
 from sqlalchemy.exc import SQLAlchemyError
+
 from app.core.extensions import db
 
 T = TypeVar("T")
@@ -9,7 +10,7 @@ T = TypeVar("T")
 class ServiceError(Exception):
     """Base exception for service layer errors."""
 
-    def __init__(self, message: str, code: str = "service_error", details: Optional[dict] = None):
+    def __init__(self, message: str, code: str = "service_error", details: dict | None = None):
         self.message = message
         self.code = code
         self.details = details or {}
@@ -17,7 +18,7 @@ class ServiceError(Exception):
 
 
 class ValidationError(ServiceError):
-    def __init__(self, message: str, details: Optional[dict] = None):
+    def __init__(self, message: str, details: dict | None = None):
         super().__init__(message, code="validation_error", details=details)
 
 
@@ -31,16 +32,16 @@ class PermissionError(ServiceError):
         super().__init__(message, code="permission_denied")
 
 
-class BaseService(Generic[T]):
+class BaseService[T]:
     """Base service with common CRUD operations."""
 
-    def __init__(self, model: Type[T]):
+    def __init__(self, model: type[T]):
         self.model = model
 
-    def get_by_id(self, id: str) -> Optional[T]:
+    def get_by_id(self, id: str) -> T | None:
         return db.session.get(self.model, id)
 
-    def get_all(self, **filters) -> List[T]:
+    def get_all(self, **filters) -> list[T]:
         query = self.model.query
         for key, value in filters.items():
             if value is not None:

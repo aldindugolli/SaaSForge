@@ -1,14 +1,19 @@
-from typing import Optional
-from datetime import datetime, timezone
-import stripe
+from datetime import UTC, datetime
 
+import stripe
 from flask import current_app
-from app.core.extensions import db
+
+from app.core.extensions import cache_service, db
 from app.core.models import (
-    Organization, Subscription, Invoice, PaymentEvent, AuditLog,
-    PlanType, SubscriptionStatus,
+    AuditLog,
+    Invoice,
+    Organization,
+    PaymentEvent,
+    PlanType,
+    Subscription,
+    SubscriptionStatus,
 )
-from app.services.base import ServiceError, ValidationError, NotFoundError
+from app.services.base import NotFoundError, ServiceError, ValidationError
 
 
 class BillingService:
@@ -125,7 +130,7 @@ class BillingService:
                 stripe_customer_id=customer_id,
                 plan=PlanType.PRO.value,
                 status=SubscriptionStatus.ACTIVE.value,
-                current_period_start=datetime.fromtimestamp(session.get("created", 0), tz=timezone.utc),
+                current_period_start=datetime.fromtimestamp(session.get("created", 0), tz=UTC),
             )
             db.session.add(sub)
 
@@ -138,6 +143,9 @@ class BillingService:
             resource_type="subscription",
             resource_id=sub.id,
         )
+
+        cache_service.invalidate_analytics()
+        cache_service.invalidate_org_data(str(organization_id))
 
     @staticmethod
     def _handle_subscription_created(event):
@@ -154,9 +162,9 @@ class BillingService:
 
         sub.status = sub_data.get("status")
         if sub_data.get("current_period_start"):
-            sub.current_period_start = datetime.fromtimestamp(sub_data["current_period_start"], tz=timezone.utc)
+            sub.current_period_start = datetime.fromtimestamp(sub_data["current_period_start"], tz=UTC)
         if sub_data.get("current_period_end"):
-            sub.current_period_end = datetime.fromtimestamp(sub_data["current_period_end"], tz=timezone.utc)
+            sub.current_period_end = datetime.fromtimestamp(sub_data["current_period_end"], tz=UTC)
 
         sub.stripe_price_id = sub_data.get("items", {}).get("data", [{}])[0].get("price", {}).get("id") if sub_data.get("items", {}).get("data") else None
 
@@ -171,6 +179,8 @@ class BillingService:
 
         sub.organization.subscription_tier = sub.plan
         db.session.commit()
+        cache_service.invalidate_analytics()
+        cache_service.invalidate_org_data(str(sub.organization_id))
 
     @staticmethod
     def _handle_subscription_deleted(event):
@@ -182,12 +192,14 @@ class BillingService:
             return
 
         sub.status = SubscriptionStatus.CANCELED.value
-        sub.canceled_at = datetime.now(timezone.utc)
-        sub.ended_at = datetime.fromtimestamp(sub_data.get("ended_at", 0), tz=timezone.utc) if sub_data.get("ended_at") else datetime.now(timezone.utc)
+        sub.canceled_at = datetime.now(UTC)
+        sub.ended_at = datetime.fromtimestamp(sub_data.get("ended_at", 0), tz=UTC) if sub_data.get("ended_at") else datetime.now(UTC)
 
         sub.organization.subscription_tier = PlanType.FREE.value
         sub.organization.max_members = 1
         db.session.commit()
+        cache_service.invalidate_analytics()
+        cache_service.invalidate_org_data(str(sub.organization_id))
 
     @staticmethod
     def _handle_invoice_paid(event):
@@ -208,7 +220,7 @@ class BillingService:
             status=invoice_data.get("status", "paid"),
             description=invoice_data.get("description"),
             pdf_url=invoice_data.get("invoice_pdf"),
-            paid_at=datetime.now(timezone.utc),
+            paid_at=datetime.now(UTC),
         )
         db.session.add(invoice)
 

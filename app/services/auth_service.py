@@ -1,15 +1,13 @@
-from typing import Optional, Tuple
-from datetime import datetime, timezone, timedelta
-import secrets
 import re
+import secrets
+from datetime import UTC, datetime
 
-from flask import current_app, render_template
-from itsdangerous import URLSafeTimedSerializer, SignatureExpired
-from werkzeug.security import generate_password_hash
+from flask import current_app
+from itsdangerous import SignatureExpired, URLSafeTimedSerializer
 
-from app.core.extensions import db
-from app.core.models import User, Organization, Membership, AuditLog, Role, PlanType
-from app.services.base import ServiceError, ValidationError, NotFoundError, PermissionError
+from app.core.extensions import cache_service, db
+from app.core.models import AuditLog, Membership, Organization, PlanType, Role, User
+from app.services.base import NotFoundError, PermissionError, ValidationError
 from app.services.notification_service import NotificationService
 
 
@@ -18,7 +16,7 @@ class AuthService:
     PASSWORD_REGEX = re.compile(r"^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#]).{8,}$")
 
     @staticmethod
-    def validate_password(password: str) -> Tuple[bool, str]:
+    def validate_password(password: str) -> tuple[bool, str]:
         if len(password) < AuthService.PASSWORD_MIN_LENGTH:
             return False, f"Password must be at least {AuthService.PASSWORD_MIN_LENGTH} characters long."
         if not re.search(r"[A-Z]", password):
@@ -32,7 +30,7 @@ class AuthService:
         return True, ""
 
     @staticmethod
-    def validate_email(email: str) -> Tuple[bool, str]:
+    def validate_email(email: str) -> tuple[bool, str]:
         pattern = r"^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$"
         if not re.match(pattern, email):
             return False, "Invalid email address."
@@ -57,7 +55,7 @@ class AuthService:
         # Generate email verification token
         serializer = URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
         user.email_verify_token = serializer.dumps(email)
-        user.email_verify_sent_at = datetime.now(timezone.utc)
+        user.email_verify_sent_at = datetime.now(UTC)
 
         db.session.add(user)
         db.session.flush()
@@ -92,6 +90,7 @@ class AuthService:
         )
 
         db.session.commit()
+        cache_service.invalidate_analytics()
 
         # Send welcome email (async)
         AuthService._send_verification_email(user)
@@ -121,7 +120,7 @@ class AuthService:
             raise PermissionError(f"This account has been banned. Reason: {user.ban_reason or 'No reason provided.'}")
 
         # Update login tracking
-        user.last_login_at = datetime.now(timezone.utc)
+        user.last_login_at = datetime.now(UTC)
         user.last_login_ip = ip_address
         user.last_user_agent = user_agent
         user.login_count = (user.login_count or 0) + 1
@@ -135,6 +134,13 @@ class AuthService:
         )
 
         db.session.commit()
+
+        from app.services.session_service import SessionService
+        try:
+            SessionService.create_session(str(user.id))
+        except Exception:
+            pass
+
         return user
 
     @staticmethod
@@ -146,7 +152,7 @@ class AuthService:
         serializer = URLSafeTimedSerializer(current_app.config["SECRET_KEY"])
         token = serializer.dumps(email, salt="password-reset")
         user.password_reset_token = token
-        user.password_reset_sent_at = datetime.now(timezone.utc)
+        user.password_reset_sent_at = datetime.now(UTC)
         db.session.commit()
 
         # In production, send email via background job

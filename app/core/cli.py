@@ -1,15 +1,27 @@
+from datetime import UTC
+
 import click
 from flask.cli import with_appcontext
+
 from app.core.extensions import db
-from app.core.models import User, Organization, Membership, Subscription, FeatureFlag, Role, PlanType, SubscriptionStatus
+from app.core.models import (
+    FeatureFlag,
+    Membership,
+    Organization,
+    PlanType,
+    Role,
+    Subscription,
+    SubscriptionStatus,
+    User,
+)
 
 
 @click.command("seed-data")
 @with_appcontext
 def seed_data():
     """Seed the database with example data."""
-    from datetime import timedelta, timezone
     from datetime import datetime as dt
+    from datetime import timedelta
 
     # Check if data already exists
     if User.query.first():
@@ -72,15 +84,15 @@ def seed_data():
         organization_id=admin_org.id,
         plan=PlanType.BUSINESS.value,
         status=SubscriptionStatus.ACTIVE.value,
-        current_period_start=dt.now(timezone.utc),
-        current_period_end=dt.now(timezone.utc) + timedelta(days=30),
+        current_period_start=dt.now(UTC),
+        current_period_end=dt.now(UTC) + timedelta(days=30),
     ))
     db.session.add(Subscription(
         organization_id=demo_org.id,
         plan=PlanType.PRO.value,
         status=SubscriptionStatus.ACTIVE.value,
-        current_period_start=dt.now(timezone.utc),
-        current_period_end=dt.now(timezone.utc) + timedelta(days=30),
+        current_period_start=dt.now(UTC),
+        current_period_end=dt.now(UTC) + timedelta(days=30),
     ))
 
     # Create feature flags
@@ -93,8 +105,8 @@ def seed_data():
 
     db.session.commit()
     click.echo("Seed data created successfully!")
-    click.echo(f"  Admin: admin@saasforge.com / Admin123!")
-    click.echo(f"  Demo:  demo@saasforge.com / Demo123!")
+    click.echo("  Admin: admin@saasforge.com / Admin123!")
+    click.echo("  Demo:  demo@saasforge.com / Demo123!")
 
 
 @click.command("create-admin")
@@ -136,3 +148,41 @@ def list_routes():
     click.echo("-" * 100)
     for route, methods, endpoint in sorted(rules):
         click.echo(f"{route:<50} {methods:<20} {endpoint:<30}")
+
+
+@click.command("schedule-jobs")
+@with_appcontext
+def schedule_jobs():
+    """Schedule recurring background jobs."""
+    from datetime import datetime, timedelta
+
+    from app.core.models import JobRecord
+    from app.jobs import (
+        cleanup_expired_data_job,
+        generate_weekly_report_job,
+        process_analytics_job,
+    )
+    from app.services.job_scheduler import JobScheduler
+
+    now = datetime.now(UTC)
+
+    hourly = JobRecord.query.filter_by(name="Hourly Analytics Refresh", status="scheduled").first()
+    if not hourly:
+        JobScheduler.enqueue_in(timedelta(hours=1), "Hourly Analytics Refresh", process_analytics_job)
+        click.echo("Scheduled hourly analytics refresh.")
+
+    daily = JobRecord.query.filter_by(name="Daily Cleanup", status="scheduled").first()
+    if not daily:
+        next_daily = now.replace(hour=2, minute=0, second=0, microsecond=0)
+        if next_daily <= now:
+            next_daily += timedelta(days=1)
+        JobScheduler.enqueue_at(next_daily, "Daily Cleanup", cleanup_expired_data_job)
+        click.echo("Scheduled daily cleanup (02:00 UTC).")
+
+    weekly = JobRecord.query.filter_by(name="Weekly Report", status="scheduled").first()
+    if not weekly:
+        next_weekly = now + timedelta(weeks=1)
+        JobScheduler.enqueue_at(next_weekly, "Weekly Report", generate_weekly_report_job)
+        click.echo("Scheduled weekly report.")
+
+    click.echo("Done.")

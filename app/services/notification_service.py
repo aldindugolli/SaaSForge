@@ -1,7 +1,6 @@
-from typing import Optional, List
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-from app.core.extensions import db, rq
+from app.core.extensions import db
 from app.core.models import Notification, NotificationType
 
 
@@ -10,9 +9,9 @@ class NotificationService:
     def create_notification(
         user_id: str,
         title: str,
-        message: Optional[str] = None,
+        message: str | None = None,
         type: str = NotificationType.INFO.value,
-        link: Optional[str] = None,
+        link: str | None = None,
     ) -> Notification:
         notification = Notification(
             user_id=user_id,
@@ -34,20 +33,20 @@ class NotificationService:
             return False
 
         notification.is_read = True
-        notification.read_at = datetime.now(timezone.utc)
+        notification.read_at = datetime.now(UTC)
         db.session.commit()
         return True
 
     @staticmethod
     def mark_all_as_read(user_id: str) -> bool:
         Notification.query.filter_by(user_id=user_id, is_read=False).update(
-            {"is_read": True, "read_at": datetime.now(timezone.utc)}
+            {"is_read": True, "read_at": datetime.now(UTC)}
         )
         db.session.commit()
         return True
 
     @staticmethod
-    def get_user_notifications(user_id: str, limit: int = 50, unread_only: bool = False) -> List[Notification]:
+    def get_user_notifications(user_id: str, limit: int = 50, unread_only: bool = False) -> list[Notification]:
         query = Notification.query.filter_by(user_id=user_id)
         if unread_only:
             query = query.filter_by(is_read=False)
@@ -58,7 +57,7 @@ class NotificationService:
         return Notification.query.filter_by(user_id=user_id, is_read=False).count()
 
     @staticmethod
-    def bulk_create(notifications: List[dict]) -> List[Notification]:
+    def bulk_create(notifications: list[dict]) -> list[Notification]:
         objs = []
         for n in notifications:
             notification = Notification(

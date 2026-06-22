@@ -1,0 +1,109 @@
+{% extends "base.html" %}
+{% block title %}Security Center — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto">
+  <h1 class="text-2xl font-bold text-gray-900 mb-6">Security Center</h1>
+
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+    <div class="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-4">
+      <div class="w-10 h-10 rounded-full {{ 'bg-green-100' if current_user.totp_enabled else 'bg-gray-100' }} flex items-center justify-center">
+        <svg class="w-5 h-5 {{ 'text-green-600' if current_user.totp_enabled else 'text-gray-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+        </svg>
+      </div>
+      <div>
+        <p class="text-sm font-medium">Two-Factor Auth</p>
+        <p class="text-xs {{ 'text-green-600' if current_user.totp_enabled else 'text-gray-400' }}">{{ 'Enabled' if current_user.totp_enabled else 'Disabled' }}</p>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-4">
+      <div class="w-10 h-10 rounded-full {{ 'bg-green-100' if current_user.email_verified else 'bg-yellow-100' }} flex items-center justify-center">
+        <svg class="w-5 h-5 {{ 'text-green-600' if current_user.email_verified else 'text-yellow-600' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
+        </svg>
+      </div>
+      <div>
+        <p class="text-sm font-medium">Email Verified</p>
+        <p class="text-xs {{ 'text-green-600' if current_user.email_verified else 'text-yellow-600' }}">{{ 'Verified' if current_user.email_verified else 'Pending' }}</p>
+      </div>
+    </div>
+    <div class="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-4">
+      <div class="w-10 h-10 rounded-full bg-gray-100 flex items-center justify-center">
+        <svg class="w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
+        </svg>
+      </div>
+      <div>
+        <p class="text-sm font-medium">Active API Keys</p>
+        <p class="text-xs text-gray-500">{{ api_keys|length }} key(s)</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="space-y-6">
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">Recent Logins</h2>
+      {% if recent_logins %}
+      <div class="space-y-2">
+        {% for log in recent_logins %}
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-gray-700">{{ log.ip_address or 'Unknown IP' }}</span>
+          <span class="text-xs text-gray-400">{{ log.created_at | humanize }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-sm text-gray-500">No recent logins recorded.</p>
+      {% endif %}
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">Failed Login Attempts</h2>
+      {% if failed_logins %}
+      <div class="space-y-2">
+        {% for log in failed_logins %}
+        <div class="flex items-center justify-between text-sm">
+          <span class="text-red-600">{{ log.ip_address or 'Unknown IP' }}</span>
+          <span class="text-xs text-gray-400">{{ log.created_at | humanize }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-sm text-gray-500">No failed login attempts.</p>
+      {% endif %}
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">Active Sessions</h2>
+      {% if active_sessions %}
+      <div class="space-y-2">
+        {% for s in active_sessions %}
+        <div class="flex items-center justify-between text-sm">
+          <span>{{ s.browser or 'Unknown' }} — {{ s.ip_address or 'Unknown IP' }}</span>
+          <span class="text-xs text-gray-400">{{ s.last_activity_at | humanize }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-sm text-gray-500">No other active sessions.</p>
+      {% endif %}
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">Recent Activity</h2>
+      {% if recent_audit %}
+      <div class="space-y-2">
+        {% for log in recent_audit %}
+        <div class="flex items-center justify-between text-sm">
+          <span class="font-mono text-xs">{{ log.action }}</span>
+          <span class="text-xs text-gray-400">{{ log.created_at | humanize }}</span>
+        </div>
+        {% endfor %}
+      </div>
+      {% else %}
+      <p class="text-sm text-gray-500">No recent activity.</p>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}

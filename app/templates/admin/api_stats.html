@@ -1,0 +1,88 @@
+{% extends "admin/base.html" %}
+{% block title %}API Analytics — Admin{% endblock %}
+{% block content %}
+<div class="max-w-6xl mx-auto">
+  <h1 class="text-2xl font-bold text-gray-900 mb-6">API Analytics</h1>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <p class="text-sm text-gray-500">Total Requests</p>
+      <p class="text-3xl font-bold text-gray-900">{{ total }}</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">By Endpoint</h2>
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-gray-500 border-b border-gray-100">
+            <th class="pb-2">Endpoint</th>
+            <th class="pb-2 text-right">Requests</th>
+            <th class="pb-2 text-right">Avg (ms)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for ep in by_endpoint %}
+          <tr class="border-b border-gray-50">
+            <td class="py-2 font-mono text-xs">{{ ep.endpoint }}</td>
+            <td class="py-2 text-right">{{ ep.count }}</td>
+            <td class="py-2 text-right">{{ ep.avg_ms | int }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    <div class="bg-white rounded-xl border border-gray-200 p-5">
+      <h2 class="text-lg font-semibold text-gray-900 mb-4">By Status Code</h2>
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-gray-500 border-b border-gray-100">
+            <th class="pb-2">Status</th>
+            <th class="pb-2 text-right">Count</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for st in by_status %}
+          <tr class="border-b border-gray-50">
+            <td class="py-2">{{ st.status_code }}</td>
+            <td class="py-2 text-right">{{ st.count }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="bg-white rounded-xl border border-gray-200 p-5">
+    <h2 class="text-lg font-semibold text-gray-900 mb-4">Recent Requests</h2>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-left text-gray-500 border-b border-gray-100">
+            <th class="pb-2">Time</th>
+            <th class="pb-2">Method</th>
+            <th class="pb-2">Endpoint</th>
+            <th class="pb-2">Status</th>
+            <th class="pb-2 text-right">ms</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for log in recent %}
+          <tr class="border-b border-gray-50">
+            <td class="py-2 text-xs text-gray-500">{{ log.created_at.strftime('%H:%M:%S') }}</td>
+            <td class="py-2 font-mono text-xs">{{ log.method }}</td>
+            <td class="py-2 font-mono text-xs">{{ log.endpoint }}</td>
+            <td class="py-2"><span class="px-2 py-0.5 text-xs rounded-full {{ 'bg-green-100 text-green-700' if log.status_code < 400 else 'bg-red-100 text-red-700' }}">{{ log.status_code }}</span></td>
+            <td class="py-2 text-right text-xs">{{ log.response_time_ms }}ms</td>
+          </tr>
+          {% else %}
+          <tr><td class="py-4 text-center text-gray-500" colspan="5">No API requests logged yet.</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+{% endblock %}

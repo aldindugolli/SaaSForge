@@ -1,9 +1,9 @@
-from flask import Blueprint, render_template, redirect, url_for, request, flash, current_app
-from flask_login import login_required, current_user
+from flask import Blueprint, current_app, flash, redirect, render_template, request, url_for
+from flask_login import current_user, login_required
 
-from app.core.models import Organization, Subscription, Invoice, PaymentEvent
+from app.core.models import Invoice, PaymentEvent
+from app.services.base import NotFoundError, ServiceError, ValidationError
 from app.services.billing_service import BillingService
-from app.services.base import ServiceError, ValidationError, NotFoundError
 
 billing_bp = Blueprint("billing", __name__)
 
@@ -76,7 +76,6 @@ def customer_portal():
 
 @billing_bp.route("/webhook", methods=["POST"])
 def webhook():
-    import stripe
     payload = request.get_data()
     sig_header = request.headers.get("Stripe-Signature")
 
