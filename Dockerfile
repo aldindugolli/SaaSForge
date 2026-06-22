@@ -29,9 +29,9 @@ ENV PYTHONUNBUFFERED=1 \
     PYTHONDONTWRITEBYTECODE=1 \
     FLASK_ENV=production
 
-EXPOSE 5000
+EXPOSE ${PORT:-5000}
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-    CMD curl -f http://localhost:5000/ || exit 1
+    CMD curl -f http://localhost:${PORT:-5000}/ || exit 1
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5000", "--workers", "4", "--worker-class", "gevent", "--timeout", "120", "--access-logfile", "-", "--error-logfile", "-", "wsgi:app"]
+CMD gunicorn --bind 0.0.0.0:${PORT:-5000} --workers 4 --worker-class gevent --timeout 120 --access-logfile - --error-logfile - wsgi:app
