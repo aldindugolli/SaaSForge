@@ -1,42 +1,61 @@
 {% extends "base.html" %}
-{% block title %}Cache Management{% endblock %}
+{% block title %}Cache Management — {{ app_name }} Admin{% endblock %}
 {% block content %}
-<div class="max-w-2xl">
-  <h1 class="text-2xl font-bold text-gray-900 mb-6">Cache Management</h1>
+<div class="max-w-7xl mx-auto">
+  <div class="flex items-center justify-between mb-8">
+    <h1 class="text-3xl font-bold tracking-tight">Cache Management</h1>
+  </div>
 
-  <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6 mb-6">
-    <div class="flex items-center justify-between mb-4">
-      <h2 class="text-lg font-semibold text-gray-900">Status</h2>
-      <span class="px-3 py-1 text-sm rounded-full {% if cache_available %}bg-green-100 text-green-800{% else %}bg-yellow-100 text-yellow-800{% endif %}">
-        {{ "Redis Connected" if cache_available else "In-Memory Fallback" }}
+  <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm mb-6">
+    <div class="flex items-center justify-between">
+      <div>
+        <h2 class="text-lg font-semibold">Status</h2>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">
+          {% if cache_available %}
+          Cache is active and connected.
+          {% else %}
+          Redis unavailable — using in-memory fallback.
+          {% endif %}
+        </p>
+      </div>
+      <span class="px-3 py-1.5 text-sm font-medium rounded-full {% if cache_available %}bg-green-100 text-green-700{% else %}bg-yellow-100 text-yellow-700{% endif %}">
+        {{ "Connected" if cache_available else "In-Memory Fallback" }}
       </span>
     </div>
   </div>
 
-  <form method="POST" class="space-y-4">
-    <div class="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <h2 class="text-lg font-semibold text-gray-900 mb-4">Actions</h2>
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+    <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+      <h2 class="text-lg font-semibold">Actions</h2>
+    </div>
+    <div class="p-6 space-y-4">
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" name="action" value="clear_all"
+                class="w-full px-4 py-2.5 bg-red-600 text-white rounded-xl font-medium hover:bg-red-700 transition-all shadow-sm text-sm"
+                onclick="return confirm('Clear entire cache? This cannot be undone.')">
+          Clear All Cache
+        </button>
+      </form>
 
-      <button type="submit" name="action" value="clear_all"
-              class="w-full mb-3 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
-              onclick="return confirm('Clear entire cache?')">
-        Clear All Cache
-      </button>
+      <form method="POST">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" name="action" value="clear_analytics"
+                class="w-full px-4 py-2.5 bg-yellow-600 text-white rounded-xl font-medium hover:bg-yellow-700 transition-all shadow-sm text-sm">
+          Clear Analytics Cache
+        </button>
+      </form>
 
-      <button type="submit" name="action" value="clear_analytics"
-              class="w-full mb-3 px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition">
-        Clear Analytics Cache
-      </button>
-
-      <div class="flex gap-2">
+      <form method="POST" class="flex gap-2">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
         <input type="text" name="org_id" placeholder="Organization ID"
-               class="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+               class="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-brand-500 outline-none text-sm">
         <button type="submit" name="action" value="clear_org"
-                class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                class="px-5 py-2.5 bg-brand-600 text-white rounded-xl font-medium hover:bg-brand-700 transition-all shadow-sm text-sm shrink-0">
           Clear Org Cache
         </button>
-      </div>
+      </form>
     </div>
-  </form>
+  </div>
 </div>
 {% endblock %}

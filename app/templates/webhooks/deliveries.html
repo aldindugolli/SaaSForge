@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Webhook Deliveries — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto">
+  <div class="mb-8">
+    <a href="{{ url_for('webhooks.index') }}" class="text-sm text-brand-600 hover:text-brand-700 font-medium">&larr; Back to Endpoints</a>
+    <h1 class="text-3xl font-bold tracking-tight mt-2">Delivery History</h1>
+    <p class="text-gray-500 dark:text-gray-400 mt-1">
+      <code class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded">{{ endpoint.url }}</code>
+    </p>
+  </div>
+
+  {% if deliveries %}
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="border-b border-gray-100 dark:border-gray-700 text-left text-xs text-gray-500 uppercase tracking-wider">
+          <th class="px-6 py-3 font-medium">Event</th>
+          <th class="px-6 py-3 font-medium">Status</th>
+          <th class="px-6 py-3 font-medium">Attempts</th>
+          <th class="px-6 py-3 font-medium">Duration</th>
+          <th class="px-6 py-3 font-medium">HTTP</th>
+          <th class="px-6 py-3 font-medium">Sent</th>
+          <th class="px-6 py-3 font-medium"></th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+        {% for d in deliveries %}
+        <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/30 transition-colors">
+          <td class="px-6 py-3 font-mono text-xs">{{ d.event_type }}</td>
+          <td class="px-6 py-3">
+            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium
+              {{ 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' if d.status == 'delivered' else
+                 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400' if d.status == 'pending' else
+                 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' }}">
+              {{ d.status }}
+            </span>
+          </td>
+          <td class="px-6 py-3 text-xs text-gray-500">{{ d.attempt_count }}/{{ d.max_attempts }}</td>
+          <td class="px-6 py-3 text-xs text-gray-500">{{ d.duration_ms }}ms</td>
+          <td class="px-6 py-3 font-mono text-xs">{{ d.status_code or '-' }}</td>
+          <td class="px-6 py-3 text-xs text-gray-500">{{ d.created_at | humanize }}</td>
+          <td class="px-6 py-3">
+            {% if d.status == 'failed' or d.status == 'retrying' %}
+            <form method="POST" action="{{ url_for('webhooks.retry_delivery', delivery_id=d.id) }}" class="inline">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+              <button type="submit" class="text-xs text-brand-600 hover:text-brand-700 font-medium">Retry</button>
+            </form>
+            {% endif %}
+          </td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+    <svg class="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+    </svg>
+    <p class="text-gray-500">No deliveries yet</p>
+    <p class="text-sm text-gray-400 mt-1">Deliveries will appear here when events are sent to this endpoint.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

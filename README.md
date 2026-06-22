@@ -1,6 +1,6 @@
 # SaaSForge
 
-A production-ready Flask SaaS boilerplate with multi-tenant organizations, subscription billing, role-based access control, two-factor authentication, background jobs, REST API, and full admin dashboard. Designed for teams that want to launch a SaaS product without rebuilding the foundation.
+A production-ready Flask SaaS boilerplate with multi-tenant organizations, subscription billing, RBAC, 2FA, background jobs, REST API, admin dashboard, **observability platform**, **customer webhook system**, **scoped API platform**, **performance engineering**, **executive business metrics**, and **demo environment**. Designed for teams that want to launch a SaaS product without rebuilding the foundation — then scale it with enterprise-grade operational excellence.
 
 ---
 
@@ -11,6 +11,7 @@ A production-ready Flask SaaS boilerplate with multi-tenant organizations, subsc
 - [Quick Start](#quick-start)
 - [Project Structure](#project-structure)
 - [Architecture](#architecture)
+- [Observability](#observability)
 - [Services](#services)
 - [Models](#models)
 - [Routes & Blueprints](#routes--blueprints)
@@ -56,12 +57,85 @@ A production-ready Flask SaaS boilerplate with multi-tenant organizations, subsc
 |---------|-------------|
 | Stripe Checkout | Create checkout sessions for pro/business plans |
 | Stripe Customer Portal | Self-serve subscription management |
-| Webhook handling | 6 event types (checkout completed, subscription lifecycle, invoice events) |
+| Webhook handling | 6 event types with idempotent processing via `WebhookEventLog` |
 | Plan tiers | Free, Pro, Business with configurable Stripe price IDs |
 | Trial periods | Configurable trial with conversion analytics |
 | Payment history | Invoice records with PDF links |
 | Entitlement checks | `@entitlement_required` decorator for feature gating |
 | Plan-based limits | Max members, max projects per tier |
+
+### Observability Platform
+| Feature | Description |
+|---------|-------------|
+| Structured JSON logging | `StructuredFormatter` with timestamp, level, module, function, correlation_id |
+| Correlation IDs | `X-Correlation-ID` header propagated through all services, DB queries, jobs |
+| Prometheus metrics | HTTP counters/histograms, DB query duration, cache hits/misses, worker throughput |
+| Health monitoring | `GET /health` (basic) and `GET /health/detailed` (5-component check: DB, Redis, Queue, Stripe, Email) |
+| Metrics endpoint | `GET /metrics` with Prometheus text format |
+
+### PostgreSQL Optimization
+| Feature | Description |
+|---------|-------------|
+| JSONB column helpers | `jsonb_column()` factory with SQLite fallback |
+| GIN indexes | Expression indexes for JSONB path queries |
+| Full-text search | tsvector trigger-based auto-updating columns |
+| Materialized views | `mv_dashboard_stats`, `mv_revenue_by_month`, `mv_api_usage_stats` |
+| Query optimization | `eager_load_*`, `ANALYZE` helpers |
+| Graceful degradation | All PG features no-op on SQLite |
+
+### Customer Webhook System
+| Feature | Description |
+|---------|-------------|
+| Endpoint management UI | Create, update, toggle, delete webhook endpoints |
+| Event subscription | Subscribe to specific event types via checkboxes |
+| HMAC signing | `sha256` signature in `X-Webhook-Signature` header |
+| Delivery history | Status, attempts, response code/body for each delivery |
+| Retry mechanism | Up to 5 retries with exponential backoff |
+| Test endpoint | Send test event to verify endpoint connectivity |
+| Admin dead-letter queue | View and retry failed Stripe webhook events |
+
+### Advanced API Platform
+| Feature | Description |
+|---------|-------------|
+| Scoped permissions | 12 API permission scopes (read:users, write:orgs, admin:analytics, etc.) |
+| Preset permission groups | `read`, `write`, `admin`, `full` scope presets |
+| `@require_api_permission` | Decorator-level scope enforcement |
+| Usage limits per plan | Free 1k/day, Pro 10k/day, Business 100k/day |
+| `api_auth_required` middleware | Key lookup, expiry check, daily limit enforcement |
+| API request logging | Full audit trail with response times, status codes |
+
+### Performance Engineering
+| Feature | Description |
+|---------|-------------|
+| P95/P99 response tracking | From `ApiRequestLog` with percentile_cont |
+| Slowest endpoints analysis | Grouped by method + endpoint, sorted by avg latency |
+| `@monitor_query` decorator | Tracks slow service methods (>500ms) |
+| Slow query registry | In-memory list (capped at 100 entries) with timestamps |
+| Cache analytics | Hit/miss counters, operations total |
+| pg_stat_statements | DB query analysis when available (PostgreSQL) |
+
+### Executive Business Metrics
+| Feature | Description |
+|---------|-------------|
+| MRR (Monthly Recurring Revenue) | From active subscriptions × plan prices |
+| ARR (Annual Recurring Revenue) | MRR × 12 |
+| Churn rate | Canceled / (existing + new) over configurable period |
+| LTV (Lifetime Value) | avg_revenue_per_customer × avg_lifespan_months |
+| Trial conversion funnel | Trials → converted → expired → still trialing |
+| Active orgs by tier | Breakdown by Free/Pro/Business |
+| Growth rate | Month-over-month user and revenue growth |
+| Revenue trend | 180-day monthly revenue chart |
+
+### Demo Environment
+| Feature | Description |
+|---------|-------------|
+| Demo mode flag | `DEMO_MODE=true` env var toggles safety middleware |
+| Safety middleware | Blocks destructive POST/PUT/DELETE for non-admin users |
+| Demo banner | Amber warning strip visible on all pages |
+| 4 demo accounts | admin (Business), demo (Pro), manager (Admin role), member (Member role) |
+| Seed data | Orgs, subscriptions, invoices, feature flags, extra users |
+| Reset capability | Admin-only "Reset Demo Data" button — full teardown and reseed |
+| Demo CLI | `flask seed-demo-data` for easy initialization |
 
 ### Admin Dashboard
 | Feature | Description |
@@ -76,6 +150,9 @@ A production-ready Flask SaaS boilerplate with multi-tenant organizations, subsc
 | API usage stats | Request counts, response times, endpoint breakdown |
 | Trial conversion analytics | Signup-to-trial-to-paid funnel metrics |
 | User impersonation | Admin can impersonate any user with audit trail |
+| **Performance dashboard** | Avg/P95/P99 response times, slowest endpoints, cache stats |
+| **Business metrics** | MRR, ARR, churn rate, LTV, trial conversion, revenue trend |
+| **Webhook admin** | Dead-letter queue, failed event retry |
 
 ### Analytics
 | Feature | Description |
@@ -85,7 +162,7 @@ A production-ready Flask SaaS boilerplate with multi-tenant organizations, subsc
 | Churn rate | Calculated from subscription cancellations |
 | Subscription distribution | Free vs Pro vs Business breakdown |
 | Dashboard stats | Total users, active users, total orgs, MRR, churn rate |
-| Trial conversion | Signup → trial start → paid conversion funnel |
+| Trial conversion | Signup -> trial start -> paid conversion funnel |
 | Chart.js visualizations | Interactive charts with JSON data endpoints |
 
 ### REST API
@@ -93,6 +170,8 @@ A production-ready Flask SaaS boilerplate with multi-tenant organizations, subsc
 |---------|-------------|
 | Versioned API | `/api/v1` with API key authentication |
 | API key management | Create, list, revoke (prefix `sf_`) |
+| Scoped permissions | Read/write/admin/full scope presets |
+| Usage limits | Per-plan daily limits with 429 enforcement |
 | Rate limiting | Per-key rate limits with Redis backend |
 | Usage tracking | Log every request with response time, status code |
 | OpenAPI documentation | Interactive Swagger UI at `/apidocs/` |
@@ -116,10 +195,11 @@ A production-ready Flask SaaS boilerplate with multi-tenant organizations, subsc
 | Docker support | Multi-stage Dockerfile for production |
 | Docker Compose | 5 services: web, worker, scheduler, PostgreSQL, Redis |
 | Production Compose | Adds Nginx reverse proxy |
-| CI/CD pipeline | GitHub Actions: lint → test → build → deploy |
+| CI/CD pipeline | GitHub Actions: lint -> test -> build -> deploy |
 | Security scanning | Bandit (SAST), Safety (dependencies), Gitleaks (secrets) |
 | Railway deployment | `railway.json` configured |
-| Health monitoring | `GET /health` endpoint with DB + cache status |
+| Health monitoring | `GET /health` and `GET /health/detailed` with 5 checks |
+| Prometheus endpoint | `GET /metrics` for external monitoring |
 | Sentry error tracking | Configurable DSN |
 | Dark mode | Full light/dark theme, cookie-persisted |
 | Responsive design | Mobile-first with TailwindCSS |
@@ -151,34 +231,30 @@ A production-ready Flask SaaS boilerplate with multi-tenant organizations, subsc
 | **Backend** | Python | 3.13+ |
 | | Flask | 3.x |
 | | SQLAlchemy | 2.0 |
-| | Alembic | — |
-| | Marshmallow | — |
-| | Pydantic | — |
+| | Alembic | -- |
 | **Frontend** | HTMX | 2.x |
 | | Alpine.js | 3.x |
 | | TailwindCSS (CDN) | 3.x |
 | | Chart.js | 4.x |
 | **Database** | PostgreSQL (production) | 16+ |
-| | SQLite (development) | — |
+| | SQLite (development) | -- |
 | **Cache & Queue** | Redis | 7+ |
-| **Payments** | Stripe (Checkout, Customer Portal, Webhooks) | — |
-| **Authentication** | bcrypt (Werkzeug) | — |
-| | Flask-Login | — |
-| | Authlib (Google OAuth) | — |
-| **Background Tasks** | RQ (Redis Queue) | — |
-| **Email** | SendGrid | — |
-| **Infrastructure** | Docker | — |
-| | Docker Compose | — |
-| | Nginx (production) | Alpine |
-| | Gunicorn + gevent | — |
-| **CI/CD** | GitHub Actions | — |
-| **Deployment** | Railway, VPS | — |
-| **Monitoring** | Sentry SDK | — |
-| **API Docs** | Flasgger + APISpec | — |
-| **2FA** | pyotp | — |
-| **Static Analysis** | Ruff, mypy | — |
-| **Security Scanning** | Bandit, Safety, Gitleaks | — |
-| **Testing** | pytest, factory-boy, coverage | — |
+| **Payments** | Stripe (Checkout, Customer Portal, Webhooks) | -- |
+| **Authentication** | bcrypt (Werkzeug) | -- |
+| | Flask-Login | -- |
+| | Authlib (Google OAuth) | -- |
+| **Background Tasks** | RQ (Redis Queue) | -- |
+| **Email** | SendGrid | -- |
+| **Infrastructure** | Docker, Docker Compose, Nginx | -- |
+| | Gunicorn + gevent | -- |
+| **CI/CD** | GitHub Actions | -- |
+| **Deployment** | Railway, VPS | -- |
+| **Monitoring** | Structured JSON logging, Prometheus metrics, Sentry SDK | -- |
+| **API Docs** | Flasgger + APISpec | -- |
+| **2FA** | pyotp | -- |
+| **Static Analysis** | Ruff, mypy | -- |
+| **Security Scanning** | Bandit, Safety, Gitleaks | -- |
+| **Testing** | pytest, coverage | -- |
 
 ---
 
@@ -206,6 +282,7 @@ python run.py       # Auto-detects SQLite, no env vars needed
 Then in another terminal:
 
 ```bash
+flask db upgrade    # Apply all 8 migration revisions
 flask seed-data     # Creates admin + demo users
 ```
 
@@ -213,7 +290,8 @@ Open http://localhost:5000
 - **Admin:** admin@saasforge.com / Admin123!
 - **Demo:** demo@saasforge.com / Demo123!
 
-> `python run.py` auto-selects SQLite (`LocalConfig`) when `DATABASE_URL` is not set to a PostgreSQL URI. CSRF and rate limiting are disabled in this mode; emails are logged to console.
+> `python run.py` auto-selects SQLite when `DATABASE_URL` is not set to a PostgreSQL URI. CSRF and rate limiting are disabled in this mode; emails are logged to console.
+> On first run, run `flask db upgrade` to create all tables (8 revisions: initial schema → webhook tables). PostgreSQL-only features (JSONB, GIN, FTS, materialized views) gracefully no-op on SQLite.
 
 ### Option 2: Docker (full stack with PostgreSQL + Redis)
 
@@ -223,20 +301,11 @@ docker-compose exec web flask db upgrade
 docker-compose exec web flask seed-data
 ```
 
-Opens on http://localhost:5000 with PostgreSQL and Redis running.
-
 ### Option 3: Local with PostgreSQL
-
-Set environment variables:
 
 ```bash
 export DATABASE_URL=postgresql://postgres:postgres@localhost:5432/saasforge
 export REDIS_URL=redis://localhost:6379/0
-```
-
-Then:
-
-```bash
 flask db upgrade
 flask seed-data
 python run.py
@@ -250,10 +319,14 @@ python run.py
 saasforge/
 ├── app/
 │   ├── __init__.py              # Application factory (create_app)
+│   │                           # init_observability() - correlation IDs, metrics, JSON logging
+│   │   # ├── init_database_extensions() - JSONB, GIN indexes, FTS, materialized views
+│   │   # └── init_demo_environment() - demo safety middleware
 │   ├── jobs.py                  # 5 background job definitions
 │   │
-│   ├── admin/                   # Admin dashboard (17 routes)
-│   │   └── routes.py            # User/org mgmt, audit, cache, jobs, analytics
+│   ├── admin/                   # Admin dashboard (20+ routes)
+│   │   └── routes.py            # User/org mgmt, audit, cache, jobs, analytics,
+│   │                            # performance, business_metrics, webhooks
 │   ├── analytics/               # Analytics (5 routes)
 │   │   └── routes.py            # Chart data endpoints + dashboard
 │   ├── api/                     # REST API v1 (10 routes)
@@ -263,151 +336,169 @@ saasforge/
 │   ├── billing/                 # Subscription billing (5 routes)
 │   │   └── routes.py            # Checkout, portal, webhooks, history
 │   ├── core/                    # Core infrastructure
-│   │   ├── __init__.py
-│   │   ├── cli.py               # 4 Flask CLI commands
-│   │   ├── config.py            # Production Config class (130 lines)
+│   │   ├── cli.py               # 5 Flask CLI commands
+│   │   ├── config.py            # Production + Local config classes
 │   │   ├── context_processors.py # Global template context
 │   │   ├── error_handlers.py    # 5 error handlers (400/403/404/429/500)
 │   │   ├── extensions.py        # Flask extensions (db, login, csrf, etc.)
-│   │   ├── local_config.py      # Dev config (SQLite, no CSRF/rate limit)
-│   │   ├── models.py            # 15 models + 5 enums (494 lines)
-│   │   └── routes.py            # Core routes (13 routes)
+│   │   ├── models.py            # 17 models + 5 enums (incl. CustomerWebhookEndpoint, WebhookDelivery, WebhookEventLog)
+│   │   └── routes.py            # Core routes (15 routes: +health/detailed, /metrics)
+│   ├── db/                      # PostgreSQL optimization module
+│   │   └── __init__.py          # JSONB helpers, GIN/expression indexes, FTS triggers, materialized views
 │   ├── notifications/           # In-app notifications (5 routes)
 │   │   └── routes.py
 │   ├── organizations/           # Team management (12 routes)
 │   │   └── routes.py
 │   ├── security/                # Security center (1 route)
 │   │   └── routes.py
+│   ├── webhooks/                # Customer webhook management (8 routes)
+│   │   └── routes.py            # CRUD, toggle, test, delivery history, retry
 │   │
-│   ├── services/                # Business logic layer (16 files)
-│   │   ├── __init__.py
-│   │   ├── analytics_service.py # AnalyticsService
-│   │   ├── audit_service.py     # AuditService + @audit_log decorator
-│   │   ├── auth_service.py      # AuthService
+│   ├── services/                # Business logic layer (20 files)
+│   │   ├── analytics_service.py
+│   │   ├── api_platform.py      # APIPermission enum, SCOPE_PERMISSIONS, UsageLimitService, create_api_key(), api_auth_required
+│   │   ├── audit_service.py
+│   │   ├── auth_service.py
 │   │   ├── base.py              # BaseService[T] + 4 error classes
-│   │   ├── billing_service.py   # BillingService (Stripe)
-│   │   ├── cache_service.py     # RedisCache + CacheService
+│   │   ├── billing_service.py
+│   │   ├── business_metrics.py  # MRR, ARR, churn, LTV, trial conversion, growth rate, revenue trend
+│   │   ├── cache_service.py
 │   │   ├── decorators.py        # 6 route decorators
-│   │   ├── email_service.py     # EmailService (SendGrid)
-│   │   ├── entitlement_service.py # EntitlementService
-│   │   ├── impersonation_service.py # ImpersonationService
-│   │   ├── job_scheduler.py     # JobScheduler + JobMonitorHooks
-│   │   ├── notification_service.py # NotificationService
-│   │   ├── org_service.py       # OrganizationService
-│   │   ├── role_service.py      # Permission system + RoleService
-│   │   ├── session_service.py   # SessionService
-│   │   └── two_factor_service.py # TwoFactorService
+│   │   ├── demo_service.py      # DEMO_ACCOUNTS, DemoMiddleware, create_seed_data(), reset_demo_data()
+│   │   ├── email_service.py
+│   │   ├── entitlement_service.py
+│   │   ├── impersonation_service.py
+│   │   ├── job_scheduler.py
+│   │   ├── notification_service.py
+│   │   ├── org_service.py
+│   │   ├── performance_service.py # PerformanceMetrics, @monitor_query, get_slow_queries, cache analytics
+│   │   ├── role_service.py
+│   │   ├── session_service.py
+│   │   ├── two_factor_service.py
+│   │   └── webhook_service.py   # StripeWebhookProcessor + CustomerWebhookService (register, deliver, retry)
 │   │
-│   ├── static/
-│   │   └── js/
-│   │       └── main.js          # Client-side JS
+│   ├── templates/               # Jinja2 templates (55+ files)
+│   │   ├── base.html            # Base layout (Tailwind CDN, dark mode, HTMX, Alpine, demo banner)
+│   │   ├── webhooks/            # index.html (endpoint mgmt), deliveries.html (delivery history)
+│       │   ├── admin/               # 16 admin templates, all extending base.html
+│   │   ├── components/
+│   │   │   ├── navbar.html
+│   │   │   ├── sidebar.html     # Full admin nav with 12 links
+│   │   │   └── demo_banner.html # Demo mode amber warning strip
+│   │   └── ... (47 other templates)
 │   │
-│   └── templates/               # Jinja2 templates (47 files)
-│       ├── base.html            # Base layout (Tailwind CDN, dark mode, HTMX, Alpine)
-│       ├── landing.html         # Landing page
-│       ├── dashboard.html       # Main dashboard
-│       ├── settings.html        # User profile settings
-│       ├── sessions.html        # Active sessions
-│       ├── two_factor_setup.html # 2FA setup
-│       ├── auth/                # login, register, forgot/reset password, 2FA challenge
-│       ├── admin/               # 14 admin templates
-│       ├── analytics/           # Analytics dashboard
-│       ├── billing/             # Billing overview + payment history
-│       ├── components/          # navbar, sidebar, toast, notification_list, error_toast
-│       ├── emails/              # welcome, verify_email, password_reset, invitation
-│       ├── errors/              # 400, 403, 404, 429, 500
-│       ├── notifications/       # Notification center
-│       ├── organizations/       # create, settings, members, activity
-│       └── security/            # Security center dashboard
+│   └── observability.py         # StructuredFormatter, CorrelationMiddleware, MetricsRegistry, HealthStatus
 │
-├── tests/                       # 55+ pytest tests
-│   ├── conftest.py              # Fixtures (app, client, db, auth)
-│   ├── integration/             # Route integration tests
-│   │   └── test_auth_routes.py  # Auth flow tests
-│   └── unit/                    # Unit tests
-│       ├── test_auth_service.py # Password validation, registration, login
-│       └── test_base.py         # BaseService CRUD tests
+├── tests/                       # 98 pytest tests
+│   ├── conftest.py
+│   ├── integration/
+│   │   ├── test_admin_routes.py # 15 auth-required checks
+│   │   ├── test_auth_routes.py  # Auth flow tests
+│   │   └── test_webhooks_routes.py # 9 auth-required checks
+│   └── unit/
+│       ├── test_auth_service.py
+│       ├── test_business_metrics.py # 7 metric validation tests
+│       ├── test_cache_service.py
+│       ├── test_demo_service.py # Seed data, demo mode, allowed actions
+│       ├── test_impersonation_service.py
+│       ├── test_job_scheduler.py
+│       ├── test_models.py
+│       ├── test_org_service.py
+│       └── test_performance_service.py # Avg response, slow queries, decorator, cache analytics
 │
-├── migrations/                  # Alembic migrations (6 revisions)
-│   ├── alembic.ini
-│   ├── env.py
-│   ├── script.py.mako
+├── migrations/                  # Alembic migrations (8 revisions)
 │   └── versions/
 │       ├── cb91a1ee165e_initial_schema.py
 │       ├── 4626fbde516c_add_job_records_table.py
 │       ├── 8757bf2ba419_add_user_sessions_table.py
 │       ├── 78e2f1f46958_add_api_request_logs_table.py
 │       ├── 2d1b9e4ca700_add_2fa_fields_to_users.py
-│       └── 29131e9dc678_add_brand_color_to_organizations.py
+│       ├── 29131e9dc678_add_brand_color_to_organizations.py
+│       ├── 3a1b2c3d4e5f_postgresql_optimizations.py   # JSONB, GIN, FTS, materialized views
+│       └── 4b2c3d4e5f6a_add_webhook_tables.py         # CustomerWebhookEndpoint, WebhookDelivery, WebhookEventLog
 │
-├── docker/
-│   └── nginx.conf               # Production Nginx config
-├── .github/workflows/
-│   └── ci.yml                   # CI/CD pipeline
-├── scripts/                     # Utility scripts
 ├── docs/
-│   └── adr/
-│       └── index.md             # Architecture Decision Records (3 ADRs)
+│   ├── architecture.md          # Layered architecture, observability, PostgreSQL features, webhooks
+│   ├── api.md                   # All API endpoints including webhook management
+│   ├── development.md           # Local setup, demo env, observability, performance
+│   ├── deployment.md            # Docker, Railway, env vars for all features
+│   ├── diagrams.md              # Mermaid diagrams (system, auth, billing, multi-tenant, jobs, API lifecycle, observability, webhooks)
+│   └── adr/index.md             # Architecture Decision Records
 │
 ├── Dockerfile                   # Multi-stage production build
 ├── docker-compose.yml           # Dev: web + worker + scheduler + db + redis
 ├── docker-compose.prod.yml      # Production: + nginx
-├── requirements.txt             # 86 pinned dependencies
+├── requirements.txt             # 86+ pinned dependencies
 ├── pyproject.toml               # Project config + tool configs
 ├── pytest.ini                   # Test configuration
 ├── railway.json                 # Railway deployment config
 ├── run.py                       # Dev entrypoint (auto SQLite)
 ├── wsgi.py                      # Production WSGI entrypoint
-└── .env.example                 # 55 env var references
+└── .env.example                 # 55+ env var references
 ```
 
 ---
 
 ## Architecture
 
-### Service Layer Pattern
-
-The application follows a **thin controller, fat service** architecture:
+### Layered Architecture
 
 ```
-┌─────────────────────────────────────────────────────┐
-│                   Presentation                       │
-│  Blueprints (routes) → HTTP handling, validation,    │
-│                        template rendering            │
-├─────────────────────────────────────────────────────┤
-│                   Service Layer                      │
-│  16 service classes → business logic, queries,       │
-│                       cross-cutting concerns         │
-├─────────────────────────────────────────────────────┤
-│                   Data Layer                         │
-│  15 SQLAlchemy models → DB access, relationships     │
-├─────────────────────────────────────────────────────┤
-│                   Infrastructure                     │
-│  Stripe API, SendGrid, Redis, RQ, filesystem         │
-└─────────────────────────────────────────────────────┘
++-------------------------------------------------------+
+|                   Presentation                       |
+|  Blueprints (routes) -> HTTP handling, validation,    |
+|                        template rendering            |
++-------------------------------------------------------+
+|                   Service Layer                      |
+|  20 service classes -> business logic, queries,       |
+|                        cross-cutting concerns        |
++-------------------------------------------------------+
+|                   Data Layer                         |
+|  17 SQLAlchemy models -> DB access, relationships     |
++-------------------------------------------------------+
+|                   Infrastructure                     |
+|  Stripe API, SendGrid, Redis, RQ, filesystem,        |
+|  Prometheus, structured logging, correlation IDs    |
++-------------------------------------------------------+
 ```
 
 **Key principles:**
 - Routes are thin (~30-50 lines): parse input, call service, handle result, render template or redirect
-- Services encapsulate all business logic, database operations, and side effects (caching, auditing, notifications)
+- Services encapsulate all business logic, database operations, and side effects (caching, auditing, notifications, metric recording)
 - Services raise typed exceptions (`ValidationError`, `NotFoundError`, `PermissionError`, `ServiceError`)
-- Controllers catch exceptions and render appropriate responses (flash messages, error templates, JSON errors)
-- Same service layer serves both HTML routes and JSON API endpoints
+- Controllers catch exceptions and render appropriate responses
+
+### Application Factory
+
+`create_app()` in `app/__init__.py` orchestrates initialization in order:
+
+1. `initialize_extensions(app)` — SQLAlchemy, Migrate, LoginManager, CSRF, Limiter, RQ, Swagger
+2. `register_blueprints(app)` — 10 blueprints (added `webhooks_bp`)
+3. `register_error_handlers(app)` — 5 error handlers
+4. `register_context_processors(app)` — global template variables
+5. `register_template_filters(app)` — `humanize`, `currency`, `compact`, `pct_change`
+6. `register_shell_context(app)` — db, all models for `flask shell`
+7. `register_cli_commands(app)` — 5 CLI commands (added `seed-demo-data`)
+8. `register_scheduled_jobs(app)` — recurring job setup
+9. `init_oauth(app)` — Google OAuth provider
+10. **`init_observability(app)`** — structured logging, CorrelationMiddleware, MetricsMiddleware
+11. **`init_database_extensions(app)`** — JSONB helpers, GIN indexes, FTS, materialized views (PG only)
+12. **`init_demo_environment(app)`** — DemoMiddleware safety guards
 
 ### Multi-Tenancy
 
 ```
 Organization (tenant boundary)
-├── Owner    — full access, billing, delete org, transfer ownership
-├── Admin    — manage members, roles, settings
-└── Member   — basic access
++-- Owner    -- full access, billing, delete org, transfer ownership
++-- Admin    -- manage members, roles, settings
++-- Member   -- basic access
 ```
 
 - `Organization` is the tenant boundary
-- `Membership` links `User` ↔ `Organization` with a `role` (owner/admin/member)
+- `Membership` links `User` <-> `Organization` with a `role` (owner/admin/member)
 - All domain models reference `organization_id` for data isolation
 - Queries always filter by `organization_id`
-- Users can belong to multiple orgs; active org tracked via `is_current` flag on Membership
+- Users can belong to multiple orgs; active org tracked via `is_current`
 
 ### Caching Strategy
 
@@ -416,46 +507,81 @@ Organization (tenant boundary)
 - Cache invalidated on data mutations (user registration, org changes, subscription updates)
 - Pattern-based invalidation (`analytics:*`) — coarse but correct
 
-### Application Factory
+---
 
-`create_app()` in `app/__init__.py` orchestrates initialization:
+## Observability
 
-1. `initialize_extensions(app)` — SQLAlchemy, Migrate, LoginManager, CSRF, Limiter, RQ, Swagger
-2. `register_blueprints(app)` — 9 blueprints with URL prefixes
-3. `register_error_handlers(app)` — 5 error handlers
-4. `register_context_processors(app)` — global template variables
-5. `register_template_filters(app)` — `humanize` Jinja filter
-6. `register_shell_context(app)` — db, models for `flask shell`
-7. `register_cli_commands(app)` — 4 CLI commands
-8. `init_oauth(app)` — Google OAuth provider
+### Correlation IDs
 
-### Error Handling
+Every request receives a `X-Correlation-ID` header (generated or forwarded). The ID flows through:
 
-All error handlers support both HTMX and regular requests:
-- HTMX requests → display an inline error toast
-- Regular requests → render a full error page (`errors/4xx.html`)
+```
+Browser → Flask → Service → DB Query → Job → Webhook Delivery
+```
+
+Stored in a `ContextVar` for thread-safe access across the request lifecycle.
+
+### Structured Logging
+
+All logs emit as JSON lines with consistent fields:
+
+```json
+{"timestamp": "2026-06-22T20:08:34+00:00", "level": "INFO",
+ "logger": "app", "message": "Observability initialized",
+ "module": "__init__", "function": "init_observability",
+ "line": 172, "correlation_id": "a1b2c3d4e5f6a7b8"}
+```
+
+### Prometheus Metrics
+
+Available at `GET /metrics`:
+
+| Metric | Type | Labels |
+|--------|------|--------|
+| `http_request_duration_ms` | Histogram | method, endpoint |
+| `http_requests_total` | Counter | method, endpoint, status |
+| `http_errors_total` | Counter | method, endpoint, status |
+| `db_query_duration_ms` | Histogram | — |
+| `db_queries_total` | Counter | — |
+| `cache_hits_total` / `cache_misses_total` | Counter | operation |
+| `worker_job_duration_ms` | Histogram | job, status |
+| `queue_operations_total` | Counter | operation, queue |
+
+### Health Checks
+
+| Endpoint | Checks |
+|----------|--------|
+| `GET /health` | Database, cache, queue, webhook events |
+| `GET /health/detailed` | Database, Redis, Queue, Stripe, Email |
 
 ---
 
 ## Services
 
-| Service | File | Methods | Responsibility |
-|---------|------|---------|----------------|
-| **BaseService[T]** | `base.py` | `get_by_id`, `get_all`, `create`, `update`, `delete` | Generic CRUD base class |
-| **AuthService** | `auth_service.py` | `validate_password`, `validate_email`, `register`, `login`, `send_password_reset`, `reset_password`, `verify_email`, `change_password` | Authentication, password management, email verification |
-| **AnalyticsService** | `analytics_service.py` | `get_user_growth`, `get_revenue_growth`, `get_subscription_distribution`, `get_dashboard_stats`, `get_user_analytics`, `get_trial_conversion_stats`, `invalidate` | Dashboard stats, growth charts, MRR, churn, trial conversion |
-| **AuditService** | `audit_service.py` | `log`, `get_logs`, `log_user_action` + `@audit_log` decorator | Audit logging for all critical actions |
-| **BillingService** | `billing_service.py` | `create_checkout_session`, `create_customer_portal_session`, `handle_webhook` (+ 6 internal event handlers), `get_subscription_usage` | Stripe Checkout, Customer Portal, webhook processing |
-| **CacheService** | `cache_service.py` | `cached` (decorator), `invalidate_org_data`, `invalidate_user_data`, `invalidate_analytics` | Redis caching with in-memory fallback |
-| **EmailService** | `email_service.py` | `send_email`, `send_verification_email`, `send_password_reset_email`, `send_welcome_email`, `send_invitation_email`, `send_subscription_receipt` | SendGrid email with dev console fallback |
-| **EntitlementService** | `entitlement_service.py` | `get_plan_config`, `has_feature`, `max_members`, `max_projects`, `can_add_member` + `@entitlement_required` decorator | Plan-based feature gating |
-| **ImpersonationService** | `impersonation_service.py` | `start_impersonation`, `stop_impersonation`, `is_impersonating`, `get_impersonator_id`, `get_impersonation_reason` | Admin user impersonation with audit trail |
-| **JobScheduler** | `job_scheduler.py` | `enqueue`, `enqueue_at`, `enqueue_in`, `get_status`, `cancel`, `get_recent_jobs` + `JobMonitorHooks` | RQ job scheduling with monitoring |
-| **NotificationService** | `notification_service.py` | `create_notification`, `mark_as_read`, `mark_all_as_read`, `get_user_notifications`, `get_unread_count`, `bulk_create` | In-app notification system |
-| **OrganizationService** | `org_service.py` | `create`, `switch_organization`, `get_members`, `update_member_role`, `remove_member`, `transfer_ownership`, `invite_member`, `accept_invitation`, `revoke_invitation` | Organization CRUD, member management, invitations |
-| **RoleService** | `role_service.py` | `get_user_role`, `has_permission`, `get_permissions`, `change_role` + `@require_permission` decorator + 13 permission constants | Granular RBAC |
-| **SessionService** | `session_service.py` | `create_session`, `get_user_sessions`, `revoke_session`, `revoke_all_sessions`, `touch_session` | User session tracking |
-| **TwoFactorService** | `two_factor_service.py` | `generate_secret`, `get_provisioning_uri`, `generate_qr_code_base64`, `verify_code`, `generate_backup_codes`, `verify_backup_code` | TOTP 2FA (pyotp) |
+| Service | File | Responsibility |
+|---------|------|----------------|
+| **BaseService[T]** | `base.py` | Generic CRUD base class |
+| **AuthService** | `auth_service.py` | Authentication, password management, email verification |
+| **AnalyticsService** | `analytics_service.py` | Dashboard stats, growth charts, MRR, churn, trial conversion |
+| **AuditService** | `audit_service.py` | Audit logging + `@audit_log` decorator |
+| **BillingService** | `billing_service.py` | Stripe Checkout, Customer Portal, webhook processing |
+| **CacheService** | `cache_service.py` | Redis caching with in-memory fallback |
+| **EmailService** | `email_service.py` | SendGrid email with dev console fallback |
+| **EntitlementService** | `entitlement_service.py` | Plan-based feature gating |
+| **ImpersonationService** | `impersonation_service.py` | Admin user impersonation with audit trail |
+| **JobScheduler** | `job_scheduler.py` | RQ job scheduling with monitoring |
+| **NotificationService** | `notification_service.py` | In-app notification system |
+| **OrganizationService** | `org_service.py` | Organization CRUD, member management, invitations |
+| **RoleService** | `role_service.py` | Granular RBAC + `@require_permission` decorator |
+| **SessionService** | `session_service.py` | User session tracking |
+| **TwoFactorService** | `two_factor_service.py` | TOTP 2FA (pyotp) |
+| **StripeWebhookProcessor** | `webhook_service.py` | Idempotent Stripe webhook processing, dead-letter queue |
+| **CustomerWebhookService** | `webhook_service.py` | Customer endpoint management, HMAC delivery, retry |
+| **PerformanceMetrics** | `performance_service.py` | P95/P99, slowest endpoints, cache analytics |
+| **BusinessMetricsService** | `business_metrics.py` | MRR, ARR, churn, LTV, trial conversion, growth rate |
+| **DemoService** | `demo_service.py` | Demo middleware, seed data, reset |
+| **UsageLimitService** | `api_platform.py` | Per-plan API usage limits |
+| **APIPermission** (enum) | `api_platform.py` | 12 scoped permissions + presets |
 
 ### Route Decorators (`app/services/decorators.py`)
 
@@ -472,7 +598,7 @@ All error handlers support both HTMX and regular requests:
 
 | Exception | HTTP Code | When Raised |
 |-----------|-----------|-------------|
-| `ServiceError` | 400 | Base service exception (message, code, details) |
+| `ServiceError` | 400 | Base service exception |
 | `ValidationError(ServiceError)` | 400 | Invalid input data |
 | `NotFoundError(ServiceError)` | 404 | Resource not found |
 | `PermissionError(ServiceError)` | 403 | Insufficient permissions |
@@ -490,114 +616,50 @@ All error handlers support both HTMX and regular requests:
 | `PlanType` | `FREE`, `PRO`, `BUSINESS` |
 | `APIKeyType` | `TEST`, `LIVE` |
 | `NotificationType` | `INFO`, `SUCCESS`, `WARNING`, `ERROR` |
+| `WebhookStatus` | `pending`, `processing`, `completed`, `failed`, `dead\_letter` |
+| `WebhookDeliveryStatus` | `pending`, `delivered`, `failed`, `retrying` |
 
 ### User (`users`)
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | UUID (PK) | |
-| email | String(255) | Unique, indexed |
-| password_hash | String(255) | bcrypt |
-| name | String(255) | |
-| avatar_url | Text | |
-| bio, company, location, website | Text | |
-| email_verified | Boolean | Default False |
-| email_verify_token | String(255) | |
-| is_active | Boolean | Default True |
-| is_admin | Boolean | Site admin |
-| is_banned | Boolean | |
-| banned_at, ban_reason | DateTime, Text | |
-| last_login_at | DateTime | |
-| last_login_ip | String(45) | |
-| last_user_agent | Text | |
-| login_count | Integer | |
-| google_id | String(255) | Google OAuth |
-| totp_secret | String(32) | |
-| totp_enabled | Boolean | |
-| totp_backup_codes | Text | JSON array |
-| password_reset_token | String(255) | |
-| created_at, updated_at | DateTime | |
+UUID PK, email (unique), bcrypt password hash, profile fields, email verification, admin flag, ban support, login tracking, Google OAuth ID, TOTP 2FA fields, password reset token.
 
 **Relationships:** `memberships`, `owned_organizations`, `notifications`, `api_keys`, `audit_logs`
 
 ### Organization (`organizations`)
+UUID PK, name, unique slug, brand color, timezone, owner (FK -> User), subscription tier, trial end, max members.
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | UUID (PK) | |
-| name | String(255) | |
-| slug | String(255) | Unique |
-| logo_url | Text | |
-| brand_color | String(7) | Hex color |
-| description | Text | |
-| website | String(255) | |
-| timezone | String(50) | |
-| owner_id | UUID (FK → User) | |
-| subscription_tier | Enum(PlanType) | FREE/PRO/BUSINESS |
-| subscription_status | String(50) | |
-| trial_ends_at | DateTime | |
-| max_members | Integer | |
-| is_personal | Boolean | |
-| created_at, updated_at | DateTime | |
-
-**Relationships:** `memberships`, `subscriptions`, `invitations`, `feature_flags`
+**Relationships:** `memberships`, `subscriptions`, `invitations`, `feature_flags`, `webhook_endpoints`
 
 ### Membership (`memberships`)
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | UUID (PK) | |
-| user_id | UUID (FK → User) | |
-| organization_id | UUID (FK → Organization) | |
-| role | Enum(Role) | OWNER/ADMIN/MEMBER |
-| is_current | Boolean | Active org for user |
-| joined_at | DateTime | |
+User-Org join table with role (owner/admin/member), `is_current` flag.
 
 ### Subscription (`subscriptions`)
-
-| Column | Type | Notes |
-|--------|------|-------|
-| id | UUID (PK) | |
-| organization_id | UUID (FK → Organization) | |
-| stripe_subscription_id | String(255) | |
-| stripe_customer_id | String(255) | |
-| stripe_price_id | String(255) | |
-| plan | Enum(PlanType) | |
-| status | Enum(SubscriptionStatus) | |
-| quantity | Integer | |
-| trial_end | DateTime | |
-| current_period_start/end | DateTime | |
-| canceled_at, ended_at | DateTime | |
-
-**Property:** `is_active` — checks status in (ACTIVE, TRIALING)
+Org-scoped with Stripe IDs, plan, status, period dates. Property `is_active` checks status in (ACTIVE, TRIALING).
 
 ### Invoice (`invoices`)
+Org-scoped, amount_due/amount_paid in cents, status, Stripe ID, PDF URL.
 
-| Column | Type | Notes |
-|--------|------|-------|
-| id | UUID (PK) | |
-| subscription_id | UUID (FK) | |
-| organization_id | UUID (FK) | |
-| stripe_invoice_id | String(255) | |
-| amount_due, amount_paid | Integer | Cents |
-| currency | String(3) | |
-| status | String(50) | |
-| pdf_url | Text | |
-| paid_at | DateTime | |
+### CustomerWebhookEndpoint (`customer_webhook_endpoints`)
+Org-scoped, URL, HMAC secret, subscribed event types (JSON array), active flag, delivery tracking.
+
+### WebhookDelivery (`webhook_deliveries`)
+Per-endpoint delivery attempts: event_type, payload (JSON), status, status_code, response_body, attempt_count, timestamps.
+
+### WebhookEventLog (`webhook_event_logs`)
+Stripe webhook idempotency: stripe_event_id (unique), type, status, error_message.
 
 ### Other Models
 
 | Model | Table | Key Fields |
 |-------|-------|------------|
-| `ApiRequestLog` | `api_request_logs` | user_id, organization_id, api_key_id, method, endpoint, status_code, ip_address, user_agent, response_time_ms |
-| `APIKey` | `api_keys` | user_id, organization_id, name, key_prefix, key_hash, key_type, permissions, last_used_at, expires_at, is_active, usage_count |
-| `AuditLog` | `audit_logs` | actor_id, organization_id, action, resource_type, resource_id, metadata (JSON), ip_address, user_agent |
-| `FeatureFlag` | `feature_flags` | name, key, description, enabled, scope, organization_id, user_id |
-| `Invitation` | `invitations` | organization_id, email, token, role, invited_by_id, accepted_at, expires_at, revoked |
-| `JobRecord` | `job_records` | name, queue, status, rq_job_id, scheduled_at, started_at, finished_at, result, error |
-| `Notification` | `notifications` | user_id, type (INFO/SUCCESS/WARNING/ERROR), title, message, link, is_read |
-| `PaymentEvent` | `payment_events` | organization_id, stripe_event_id, type, status, data (JSON), error_message |
-| `UserSession` | `user_sessions` | user_id, session_id, ip_address, user_agent, device_name, browser, os, location, is_current, last_activity_at |
+| `ApiRequestLog` | `api_request_logs` | user_id, org_id, api_key_id, method, endpoint, status_code, response_time_ms |
+| `APIKey` | `api_keys` | user_id, org_id, name, key_prefix, key_hash, permissions (JSON), is_active, usage_count |
+| `AuditLog` | `audit_logs` | actor_id, org_id, action, resource_type, resource_id, metadata (JSON) |
+| `FeatureFlag` | `feature_flags` | name, key, enabled, scope, org_id |
+| `Invitation` | `invitations` | org_id, email, token, role, expires_at |
+| `JobRecord` | `job_records` | name, queue, status, rq_job_id, result, error |
+| `Notification` | `notifications` | user_id, type, title, message, link, is_read |
+| `PaymentEvent` | `payment_events` | org_id, stripe_event_id, type, status, data (JSON) |
+| `UserSession` | `user_sessions` | user_id, session_id, browser, OS, IP, is_current |
 
 ---
 
@@ -607,132 +669,28 @@ All error handlers support both HTMX and regular requests:
 
 | Blueprint | Variable | URL Prefix | Route Count |
 |-----------|----------|------------|-------------|
-| Core | `core_bp` | `/` | 13 |
+| Core | `core_bp` | `/` | 15 |
 | Auth | `auth_bp` | `/auth` | 10 |
 | Organizations | `org_bp` | `/org` | 12 |
 | Billing | `billing_bp` | `/billing` | 6 |
-| Admin | `admin_bp` | `/admin` | 17 |
+| Admin | `admin_bp` | `/admin` | 20+ |
 | Analytics | `analytics_bp` | `/analytics` | 5 |
 | Notifications | `notifications_bp` | `/notifications` | 5 |
 | API | `api_bp` | `/api/v1` | 10 |
 | Security | `security_bp` | `/security` | 1 |
+| Webhooks | `webhooks_bp` | `/webhooks` | 8 |
 
-### Full Route Table
+### Key Routes
 
-#### Core Blueprint (`/`)
-| Method | Path | View | Auth |
-|--------|------|------|------|
-| GET | `/` | `index` | Public |
-| GET | `/dashboard` | `dashboard` | Login |
-| GET | `/settings` | `settings` | Login |
-| POST | `/settings` | `settings` | Login |
-| POST | `/auth/change-password` | `change_password` | Login |
-| POST | `/impersonate/stop` | `stop_impersonation` | Admin |
-| GET | `/sessions` | `sessions` | Login |
-| POST | `/sessions/<id>/revoke` | `revoke_session` | Login |
-| POST | `/sessions/revoke-all` | `revoke_all_sessions` | Login |
-| GET | `/2fa/setup` | `two_factor_setup` | Login |
-| POST | `/2fa/verify` | `two_factor_verify` | Login |
-| POST | `/2fa/disable` | `two_factor_disable` | Login |
-| GET | `/health` | `health` | Public |
+**Core (`/`):** `GET /` (landing/dashboard), `GET /settings`, `GET /sessions`, `GET /2fa/setup`, `GET /health`, `GET /health/detailed`, `GET /metrics`
 
-#### Auth Blueprint (`/auth`)
-| Method | Path | View | Auth |
-|--------|------|------|------|
-| GET/POST | `/auth/register` | `register` | Anon |
-| GET/POST | `/auth/login` | `login` | Anon |
-| GET/POST | `/auth/2fa-challenge` | `two_factor_challenge` | Anon |
-| GET | `/auth/logout` | `logout` | Login |
-| GET | `/auth/verify-email/<token>` | `verify_email` | Anon |
-| GET | `/auth/resend-verification` | `resend_verification` | Login |
-| GET/POST | `/auth/forgot-password` | `forgot_password` | Anon |
-| GET/POST | `/auth/reset-password/<token>` | `reset_password` | Anon |
-| GET | `/auth/google/login` | `google_login` | Anon |
-| GET | `/auth/google/callback` | `google_callback` | Anon |
+**Auth (`/auth`):** `GET/POST /register`, `GET/POST /login`, `GET /logout`, `GET /2fa-challenge`, `GET /verify-email/<token>`, `GET/POST /forgot-password`, `GET /reset-password/<token>`, `GET /google/login`, `GET /google/callback`
 
-#### Organization Blueprint (`/org`)
-| Method | Path | View | Auth |
-|--------|------|------|------|
-| GET/POST | `/org/create` | `create` | Login |
-| GET/POST | `/org/<id>/settings` | `settings` | @org_required |
-| GET | `/org/<id>/members` | `members` | @org_required |
-| POST | `/org/<id>/members/invite` | `invite_member` | @require_permission |
-| POST | `/org/<id>/members/<id>/remove` | `remove_member` | @require_permission |
-| POST | `/org/<id>/members/<id>/role` | `update_member_role` | @require_permission |
-| POST | `/org/switch/<id>` | `switch` | Login |
-| GET | `/org/invitations/<token>/accept` | `accept_invitation` | Login |
-| POST | `/org/invitations/<id>/revoke` | `revoke_invitation` | @require_permission |
-| POST | `/org/<id>/transfer` | `transfer_ownership` | @require_owner |
-| GET | `/org/<id>/activity` | `activity` | @org_required |
+**Admin (`/admin`):** `GET /` (overview), `GET /users`, `GET /users/<id>`, `POST /users/<id>/ban|unban|disable`, `GET /organizations`, `GET /organizations/<id>`, `GET /subscriptions`, `GET /payments`, `GET /audit-logs`, `GET /analytics`, `GET /cache`, `GET /jobs`, `POST /jobs/<id>/cancel`, `POST /jobs/enqueue`, `GET /api-stats`, `GET /trial-analytics`, `POST /impersonate`, **`GET /performance`**, **`GET /business-metrics`**, **`GET /webhooks`**, **`POST /webhooks/retry`**, **`POST /reset-demo`**
 
-#### Billing Blueprint (`/billing`)
-| Method | Path | View | Auth |
-|--------|------|------|------|
-| GET | `/billing/` | `index` | @org_required |
-| POST | `/billing/create-checkout-session/<price>` | `create_checkout_session` | @org_required |
-| GET | `/billing/success` | `success` | @org_required |
-| GET | `/billing/customer-portal` | `customer_portal` | @org_required |
-| POST | `/billing/webhook` | `webhook` | Public (Stripe) |
-| GET | `/billing/history` | `history` | @org_required |
+**Webhooks (`/webhooks`):** `GET /` (endpoint list), `POST /create`, `POST /<id>/update`, `POST /<id>/toggle`, `POST /<id>/delete`, `POST /<id>/test`, `GET /<id>/deliveries`, `POST /deliveries/<id>/retry`
 
-#### Admin Blueprint (`/admin`)
-| Method | Path | View | Auth |
-|--------|------|------|------|
-| GET | `/admin/` | `index` | Admin |
-| GET | `/admin/users` | `users` | Admin |
-| GET | `/admin/users/<id>` | `user_detail` | Admin |
-| POST | `/admin/users/<id>/ban` | `ban_user` | Admin |
-| POST | `/admin/users/<id>/unban` | `unban_user` | Admin |
-| POST | `/admin/users/<id>/disable` | `disable_user` | Admin |
-| GET | `/admin/organizations` | `organizations` | Admin |
-| GET | `/admin/organizations/<id>` | `organization_detail` | Admin |
-| GET | `/admin/subscriptions` | `subscriptions` | Admin |
-| GET | `/admin/payments` | `payments` | Admin |
-| GET | `/admin/audit-logs` | `audit_logs` | Admin |
-| GET | `/admin/analytics` | `analytics` | Admin |
-| GET/POST | `/admin/cache` | `cache_management` | Admin |
-| GET | `/admin/jobs` | `jobs` | Admin |
-| POST | `/admin/jobs/<id>/cancel` | `cancel_job` | Admin |
-| POST | `/admin/jobs/enqueue` | `enqueue_job` | Admin |
-| GET | `/admin/api-stats` | `api_stats` | Admin |
-| GET | `/admin/trial-analytics` | `trial_analytics` | Admin |
-| POST | `/admin/impersonate` | `impersonate` | Admin |
-
-#### Analytics Blueprint (`/analytics`)
-| Method | Path | View | Auth |
-|--------|------|------|------|
-| GET | `/analytics/` | `index` | @org_required |
-| GET | `/analytics/data/user-growth` | `user_growth_data` | @org_required |
-| GET | `/analytics/data/revenue` | `revenue_data` | @org_required |
-| GET | `/analytics/data/subscriptions` | `subscription_data` | @org_required |
-| GET | `/analytics/data/stats` | `stats_data` | @org_required |
-
-#### Notifications Blueprint (`/notifications`)
-| Method | Path | View | Auth |
-|--------|------|------|------|
-| GET | `/notifications/` | `index` | Login |
-| GET | `/notifications/unread-count` | `unread_count` | Login |
-| GET | `/notifications/list` | `list_notifications` | Login |
-| GET | `/notifications/<id>/read` | `mark_read` | Login |
-| GET | `/notifications/read-all` | `mark_all_read` | Login |
-
-#### API Blueprint (`/api/v1`)
-| Method | Path | View | Auth |
-|--------|------|------|------|
-| GET | `/api/v1/` | `index` | Public |
-| GET | `/api/v1/me` | `me` | API Key |
-| GET | `/api/v1/organizations` | `list_organizations` | API Key |
-| GET | `/api/v1/organizations/<id>` | `get_organization` | API Key |
-| GET | `/api/v1/organizations/<id>/members` | `list_members` | API Key |
-| GET | `/api/v1/keys` | `list_api_keys` | Session |
-| POST | `/api/v1/keys` | `create_api_key` | Session |
-| POST | `/api/v1/keys/<id>/revoke` | `revoke_api_key` | Session |
-| GET | `/api/v1/admin/stats` | `admin_stats` | API Key + Admin |
-
-#### Security Blueprint (`/security`)
-| Method | Path | View | Auth |
-|--------|------|------|------|
-| GET | `/security/` | `index` | Login |
+**API (`/api/v1`):** `GET /` (status), `GET /me`, `GET /organizations`, `GET /organizations/<id>`, `GET /organizations/<id>/members`, `GET /keys`, `POST /keys`, `POST /keys/<id>/revoke`, `GET /admin/stats`
 
 ---
 
@@ -740,29 +698,17 @@ All error handlers support both HTMX and regular requests:
 
 ### Job Definitions (`app/jobs.py`)
 
-| Job Function | Queue | Schedule | Description |
-|-------------|-------|----------|-------------|
+| Function | Queue | Schedule | Description |
+|----------|-------|----------|-------------|
 | `send_email_job(to, subject, html_body)` | saasforge-jobs | On-demand | Send transactional email |
 | `send_verification_email_job(user_id, email, verify_url)` | saasforge-jobs | On-demand | Send email verification |
 | `process_analytics_job(organization_id)` | saasforge-jobs | Hourly | Process analytics data |
 | `cleanup_expired_data_job()` | saasforge-jobs | Daily (midnight) | Remove expired invitations and tokens |
 | `generate_weekly_report_job()` | saasforge-jobs | Weekly (Mon 9am) | Generate admin digest report |
 
-### Job Monitoring
+### Webhook Async Delivery
 
-Each job creates a `JobRecord` in the database tracking:
-- Status (queued/started/finished/failed)
-- Timestamps (scheduled, started, finished)
-- Result or error message
-- RQ job ID for cross-reference
-
-The `JobMonitorHooks` class automatically updates `JobRecord` on RQ job completion or failure.
-
-### CLI Job Management
-
-```bash
-flask schedule-jobs    # Register recurring jobs with RQ Scheduler
-```
+The `CustomerWebhookService` performs synchronous HTTP delivery. For high-throughput production use, enqueue deliveries via RQ.
 
 ---
 
@@ -770,46 +716,55 @@ flask schedule-jobs    # Register recurring jobs with RQ Scheduler
 
 ### Authentication
 
-Most API endpoints require an API key sent via the `X-API-Key` header:
+API endpoints use `X-API-Key` header authentication. Keys created via UI or API have scoped permissions.
 
 ```bash
 curl -H "X-API-Key: sf_your_api_key" http://localhost:5000/api/v1/me
 ```
 
-### Interactive Documentation
+### Scoped Permissions
 
-Open http://localhost:5000/apidocs/ for the Swagger UI. The API spec covers 9 endpoints with request/response schemas.
+| Scope | Grants |
+|-------|--------|
+| `read` | read:users, read:organizations, read:billing, webhooks:read, audit:read |
+| `write` | read scope + write:organizations, write:members, webhooks:write, api_keys:write |
+| `admin` | admin:analytics, admin:users |
+| `full` | All 12 permission scopes |
+
+### Usage Limits
+
+| Plan | Daily Limit | Rate/Minute |
+|------|-------------|-------------|
+| Free | 1,000 | 10 |
+| Pro | 10,000 | 60 |
+| Business | 100,000 | 300 |
 
 ### Endpoints
 
 | Method | Path | Auth | Description |
 |--------|------|------|-------------|
-| GET | `/api/v1/` | None | API status and version info |
-| GET | `/api/v1/me` | API Key | Current user profile (id, email, name, avatar, orgs) |
+| GET | `/api/v1/` | None | API status and version |
+| GET | `/api/v1/me` | API Key | Current user profile |
 | GET | `/api/v1/organizations` | API Key | List user's organizations |
-| GET | `/api/v1/organizations/:id` | API Key | Organization details with member count |
-| GET | `/api/v1/organizations/:id/members` | API Key | Organization members list |
-| GET | `/api/v1/keys` | Session | List user's API keys |
+| GET | `/api/v1/organizations/:id` | API Key | Organization details |
+| GET | `/api/v1/organizations/:id/members` | API Key | Members list |
+| GET | `/api/v1/keys` | Session | List API keys |
 | POST | `/api/v1/keys` | Session | Create API key |
-| POST | `/api/v1/keys/:id/revoke` | Session | Revoke an API key |
+| POST | `/api/v1/keys/:id/revoke` | Session | Revoke API key |
 | GET | `/api/v1/admin/stats` | API Key + Admin | Admin dashboard stats |
 
-### Create API Key
+### Error Responses
 
-```bash
-curl -X POST http://localhost:5000/api/v1/keys \
-  -H "Content-Type: application/x-www-form-urlencoded" \
-  -d "name=My API Key&key_type=test" \
-  -b "session=your_session_cookie"
+All API errors follow a consistent format with correlation IDs:
+
+```json
+{
+  "error": "insufficient_permissions",
+  "message": "Requires 'admin:analytics' permission",
+  "required": "admin:analytics",
+  "correlation_id": "a1b2c3d4e5f6a7b8"
+}
 ```
-
-### Rate Limiting
-
-API rate limits are configurable via environment variables (`RATELIMIT_DEFAULT`, `RATELIMIT_STORAGE_URL`). Default: 100 requests/hour.
-
-### API Key Prefix
-
-All generated API keys are prefixed with `sf_` for easy identification.
 
 ---
 
@@ -817,64 +772,51 @@ All generated API keys are prefixed with `sf_` for easy identification.
 
 | Command | Description |
 |---------|-------------|
-| `flask seed-data` | Seed admin@saasforge.com and demo@saasforge.com users with orgs, subscriptions, and feature flags |
+| `flask seed-data` | Seed admin@saasforge.com and demo@saasforge.com |
+| **`flask seed-demo-data`** | Seed 4 demo accounts with orgs, subscriptions, invoices, feature flags |
 | `flask create-admin <email> <password> <name>` | Create an admin user |
-| `flask list-routes` | Display all registered routes with methods and paths |
+| `flask list-routes` | Display all registered routes |
 | `flask schedule-jobs` | Register recurring jobs with RQ Scheduler |
-| `flask shell` | Interactive shell with `db`, `User`, `Organization`, `Membership`, `Subscription` pre-imported |
-| `flask db upgrade` | Apply Alembic migrations |
-| `flask db downgrade` | Rollback migration |
-| `flask db migrate` | Generate new migration |
+| `flask shell` | Interactive shell with db, all models pre-imported |
 
 ---
 
 ## Testing
 
-### Running Tests
+### Test Suite
 
 ```bash
-pytest                           # All 55+ tests
-pytest --cov=app --cov-report=html  # Coverage report
+pytest                           # All 98+ tests
 pytest -v                        # Verbose output
-pytest -k "auth"                 # Filter by keyword
-pytest -m unit                   # Run only unit tests
-pytest -m integration            # Run only integration tests
+pytest -k "performance"          # Filter by keyword
+pytest -m unit                   # Unit tests only
+pytest -m integration            # Integration tests only
 ```
 
 ### Test Structure
 
 ```
 tests/
-├── conftest.py          # Shared fixtures
-│   ├── app              # Flask app instance
-│   ├── client           # Test client
-│   ├── db               # Test database (SQLite in-memory)
-│   ├── auth_headers     # Authenticated request headers
-│   └── sample_user      # Pre-created test user
-│
-├── unit/
-│   ├── test_base.py     # BaseService CRUD (create, get, update, delete)
-│   └── test_auth_service.py  # Password validation, email validation,
-│                              # registration, login, duplicate prevention
-│
-└── integration/
-    └── test_auth_routes.py    # Login page, register page,
-                                # registration flow, login flow,
-                                # invalid credentials, forgot password page
+├── conftest.py                  # App, client, db, registered_user, organization fixtures
+├── integration/
+│   ├── test_admin_routes.py     # 15 auth-required checks for admin pages
+│   ├── test_auth_routes.py      # Auth flow integration tests
+│   └── test_webhooks_routes.py  # 9 auth-required checks for webhook endpoints
+└── unit/
+    ├── test_auth_service.py     # Password validation, registration, login
+    ├── test_business_metrics.py # MRR, ARR, churn, LTV, growth rate validation
+    ├── test_cache_service.py    # Redis operations, invalidation, decorator
+    ├── test_demo_service.py     # Seed data, demo mode, allowed actions
+    ├── test_impersonation_service.py
+    ├── test_job_scheduler.py    # Enqueue, schedule, cancel, recent jobs
+    ├── test_models.py           # User, org, membership CRUD
+    ├── test_org_service.py      # Org CRUD, member management
+    └── test_performance_service.py # Avg response, slow queries, decorator, cache analytics
 ```
 
-### Test Database
+### Database
 
-Tests use an in-memory SQLite database. The test app is created once per session, with tables created before each test and dropped after.
-
-### Fixtures
-
-The `conftest.py` provides:
-- `app` — Flask application with test config
-- `client` — Flask test client
-- `db_session` — Clean database for each test
-- `sample_user` — Pre-registered user for login tests
-- `auth_headers` — Basic auth header for authenticated requests
+Tests use in-memory SQLite (`sqlite:///:memory:`) with session-scoped app and function-scoped transactional rollback.
 
 ---
 
@@ -887,45 +829,34 @@ railway login
 railway up
 ```
 
-Set the required environment variables in the Railway dashboard. A `railway.json` is included with health check configuration.
+Set required environment variables in the Railway dashboard. A `railway.json` is included.
 
 ### Docker (VPS)
 
-**Development stack:**
+**Development:**
 ```bash
 docker-compose up -d
 ```
-Starts: web (Flask dev server), worker (RQ), scheduler (RQ Scheduler), db (PostgreSQL 16), redis (Redis 7)
+5 services: web, worker, scheduler, PostgreSQL, Redis.
 
-**Production stack:**
+**Production:**
 ```bash
 docker-compose -f docker-compose.prod.yml up -d
 ```
-Adds Nginx reverse proxy. Environment variables read from `.env.prod`.
+Adds Nginx reverse proxy. Env vars from `.env.prod`.
 
-### Manual (VPS)
+### Manual
 
 ```bash
-# Install dependencies
 pip install -r requirements.txt
-
-# Setup database
 flask db upgrade
-
-# Seed data
 flask seed-data
-
-# Run with gunicorn
 gunicorn --bind 0.0.0.0:5000 --workers 4 --worker-class gevent --timeout 120 wsgi:app
 ```
 
 ### Dockerfile
 
-Multi-stage build:
-1. **Builder stage:** Python 3.13-slim, installs build-essential + libpq-dev + Python deps
-2. **Runtime stage:** Python 3.13-slim, libpq-dev + curl, copies built dependencies and app code
-3. Healthcheck on `/` endpoint every 30s
-4. Runs gunicorn with 4 gevent workers
+Multi-stage build (builder + runtime), Python 3.13-slim, gunicorn with 4 gevent workers, healthcheck every 30s.
 
 ---
 
@@ -934,84 +865,74 @@ Multi-stage build:
 | Variable | Default | Required | Description |
 |----------|---------|----------|-------------|
 | `SECRET_KEY` | `change-this-in-production` | Yes | Flask secret key |
-| `FLASK_ENV` | `development` | No | Environment mode |
 | `DATABASE_URL` | `postgresql://postgres:postgres@localhost:5432/saasforge` | Yes | PostgreSQL connection string |
 | `DATABASE_POOL_SIZE` | `10` | No | Connection pool size |
 | `DATABASE_POOL_MAX_OVERFLOW` | `20` | No | Max pool overflow |
-| `REDIS_URL` | `redis://localhost:6379/0` | Yes | Redis connection string |
+| `REDIS_URL` | `redis://localhost:6379/0` | Conditional | Redis (needed for sessions, rate limits, queue, cache) |
+| `DEMO_MODE` | `false` | No | Enable demo environment safety middleware |
 | `STRIPE_SECRET_KEY` | — | Yes | Stripe API secret key |
 | `STRIPE_PUBLISHABLE_KEY` | — | Yes | Stripe publishable key |
-| `STRIPE_WEBHOOK_SECRET` | — | Yes (prod) | Stripe webhook signing secret |
-| `STRIPE_PRO_PRICE_ID` | — | Yes | Price ID for Pro plan |
-| `STRIPE_BUSINESS_PRICE_ID` | — | Yes | Price ID for Business plan |
-| `GOOGLE_OAUTH_CLIENT_ID` | — | Optional | Google OAuth client ID |
-| `GOOGLE_OAUTH_CLIENT_SECRET` | — | Optional | Google OAuth client secret |
+| `STRIPE_WEBHOOK_SECRET` | — | Conditional (prod) | Stripe webhook signing secret |
+| `STRIPE_PRO_PRICE_ID` / `STRIPE_BUSINESS_PRICE_ID` | — | Yes | Stripe price IDs |
+| `GOOGLE_OAUTH_CLIENT_ID` / `GOOGLE_OAUTH_CLIENT_SECRET` | — | Optional | Google OAuth |
 | `SENDGRID_API_KEY` | — | Optional | SendGrid API key |
-| `MAIL_DEFAULT_SENDER` | `noreply@saasforge.com` | No | From address for emails |
-| `APP_NAME` | `SaaSForge` | No | Application name |
-| `APP_URL` | `http://localhost:5000` | No | Application base URL |
-| `APP_DOMAIN` | `localhost:5000` | No | Application domain |
+| `APP_NAME` / `APP_URL` / `APP_DOMAIN` | SaaSForge / localhost | No | Application metadata |
 | `ADMIN_EMAIL` | `admin@saasforge.com` | No | Admin email address |
 | `SENTRY_DSN` | — | Optional | Sentry error tracking DSN |
 | `SESSION_TYPE` | `redis` | No | Session storage backend |
 | `SESSION_COOKIE_SECURE` | `False` | No | Secure session cookie flag |
-| `PERMANENT_SESSION_LIFETIME` | `2592000` (30 days) | No | Session lifetime in seconds |
 | `RATELIMIT_DEFAULT` | `100/hour` | No | Default rate limit |
-| `RATELIMIT_STORAGE_URL` | `redis://localhost:6379/0` | No | Rate limit storage backend |
 | `UPLOAD_FOLDER` | `app/static/uploads` | No | File upload directory |
-| `MAX_CONTENT_LENGTH` | `5242880` (5MB) | No | Max upload size in bytes |
-| `FEATURE_NEW_DASHBOARD` | `true` | No | Feature flag |
-| `FEATURE_BETA_API` | `false` | No | Feature flag |
+| `FEATURE_NEW_DASHBOARD` / `FEATURE_BETA_API` | `true` / `false` | No | Feature flags |
 
-> **Local dev:** `python run.py` needs no env vars — it auto-selects SQLite (`LocalConfig`), disables CSRF and rate limiting, logs emails to console, and uses filesystem sessions. Set `DATABASE_URL=postgresql://...` to run against PostgreSQL locally.
+> **Local dev:** `python run.py` needs no env vars — auto-selects SQLite, disables CSRF/rate limiting, logs emails to console, uses filesystem sessions.
 
 ---
 
 ## Security
 
 ### Authentication & Sessions
-- CSRF protection (Flask-WTF) on all forms (disabled in dev for convenience)
+- CSRF protection via Flask-WTF (disabled in dev for convenience)
 - Session-based auth with HTTP-only cookies
-- Password hashing via bcrypt (Werkzeug 6000 rounds)
-- Two-factor authentication (TOTP) with authenticator apps + 10 backup codes
-- 2FA challenge flow intercepts login when TOTP is enabled
+- bcrypt password hashing (Werkzeug 6000 rounds)
+- TOTP 2FA with authenticator apps + 10 backup codes
 - Session tracking with browser/OS/IP identification
-- Session revocation (individual or all other sessions)
+- Individual or bulk session revocation
 
 ### Access Control
 - 13 granular permissions across 3 roles
-- `@require_permission` decorator on sensitive routes
-- `@require_owner` and `@require_admin` decorators
-- `@require_email_verified` for sensitive actions
+- `@require_permission`, `@require_owner`, `@require_admin`, `@require_email_verified` decorators
 - Admin-only routes for management features
 
 ### Input Validation
-- Service-layer input validation with typed exceptions
-- Email format validation
-- Password strength validation (8+ chars, uppercase, lowercase, number, special)
-- Jinja2 auto-escaping for XSS protection
-- SQL injection protection via SQLAlchemy ORM
+- Service-layer validation with typed exceptions
+- Email format validation, password strength validation (8+ chars, upper/lower/number/special)
+- Jinja2 auto-escaping, SQLAlchemy ORM injection protection
 
 ### API Security
-- API key authentication with SHA-256 hashed keys in DB
-- API key prefix (`sf_`) for easy identification
-- Rate limiting via Flask-Limiter + Redis
-- API request logging for audit
+- API key authentication with bcrypt-hashed keys in DB
+- Scoped permissions (`read:users`, `write:orgs`, etc.)
+- Per-plan daily usage limits with 429 enforcement
+- API request logging for full audit trail
 
-### Payment Security
-- Stripe webhook signature verification
-- No raw card data handling (Stripe Checkout)
-- PCI compliance via Stripe
+### Webhook Security
+- Stripe webhook signature verification (idempotent via `WebhookEventLog`)
+- Customer webhooks signed with HMAC-SHA256 (`X-Webhook-Signature` header)
+- Unique secret per endpoint, shown only at creation
+
+### Demo Environment Safety
+- `DemoMiddleware` blocks destructive POST/PUT/DELETE for non-admin users
+- Admin-only data reset capability
+- Visual amber banner indicating demo mode
 
 ### Infrastructure
-- Health monitoring endpoint (`GET /health`)
+- Health monitoring (`GET /health`, `GET /health/detailed`)
+- Prometheus metrics endpoint (`GET /metrics`)
+- Correlation IDs across all services
 - Sentry error tracking (configurable)
-- CI/CD security scanning:
-  - **Bandit** — Static Application Security Testing (SAST)
-  - **Safety** — Dependency vulnerability scanning
-  - **Gitleaks** — Secret/credential scanning
 - Docker health checks
 - Production Nginx reverse proxy
+- CI/CD security scanning: Bandit (SAST), Safety (dependencies), Gitleaks (secrets)
 
 ### Audit Trail
 - All critical actions logged to `audit_logs` table
@@ -1023,23 +944,27 @@ Multi-stage build:
 
 ## Database Migrations
 
-The project uses Alembic (via Flask-Migrate) with 6 migration revisions:
+### Current Revisions (8 total)
 
 | Revision | Description |
 |----------|-------------|
-| `cb91a1ee165e` | Initial schema: users, orgs, memberships, subscriptions, invoices, invitations, notifications, audit_logs, api_keys, feature_flags, payment_events |
-| `4626fbde516c` | Add `job_records` table for background job tracking |
-| `8757bf2ba419` | Add `user_sessions` table for session management |
-| `78e2f1f46958` | Add `api_request_logs` table for API usage analytics |
-| `2d1b9e4ca700` | Add 2FA fields to users: `totp_enabled`, `totp_secret`, `totp_backup_codes` |
+| `cb91a1ee165e` | Initial schema |
+| `4626fbde516c` | Add `job_records` table |
+| `8757bf2ba419` | Add `user_sessions` table |
+| `78e2f1f46958` | Add `api_request_logs` table |
+| `2d1b9e4ca700` | Add 2FA fields to users |
 | `29131e9dc678` | Add `brand_color` to organizations |
+| `3a1b2c3d4e5f` | **PostgreSQL optimizations**: JSONB helpers, GIN indexes, FTS triggers, materialized views (mv_dashboard_stats, mv_revenue_by_month, mv_api_usage_stats) |
+| `4b2c3d4e5f6a` | **Webhook tables**: customer_webhook_endpoints, webhook_deliveries, webhook_event_logs |
 
-### Migration Commands
+All 8 revisions are applied on `flask db upgrade`. PostgreSQL-only revisions (`3a1b2c3d4e5f`, `4b2c3d4e5f6a`) create tables on SQLite but skip PG-specific features (JSONB, GIN, FTS, materialized views).
+
+### Commands
 
 ```bash
-flask db upgrade          # Apply all pending migrations
+flask db upgrade          # Apply all 8 migration revisions
 flask db downgrade <rev>  # Rollback to revision
-flask db migrate -m "message"  # Generate new migration from model changes
+flask db migrate -m "msg" # Generate new migration
 flask db current          # Show current revision
 flask db history          # Show migration history
 ```

@@ -1,52 +1,52 @@
-{% extends "admin/base.html" %}
-{% block title %}Trial Analytics — Admin{% endblock %}
+{% extends "base.html" %}
+{% block title %}Trial Analytics — {{ app_name }} Admin{% endblock %}
 {% block content %}
-<div class="max-w-4xl mx-auto">
-  <h1 class="text-2xl font-bold text-gray-900 mb-6">Trial Conversion Analytics</h1>
+<div class="max-w-7xl mx-auto">
+  <h1 class="text-3xl font-bold tracking-tight mb-8">Trial Conversion Analytics</h1>
 
-  <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
-    <div class="bg-white rounded-xl border border-gray-200 p-5">
-      <p class="text-sm text-gray-500">Total Trials (90d)</p>
-      <p class="text-2xl font-bold">{{ stats.total_trials }}</p>
+  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Active Trials</p>
+      <p class="text-3xl font-bold">{{ stats.active_trials }}</p>
     </div>
-    <div class="bg-white rounded-xl border border-gray-200 p-5">
-      <p class="text-sm text-gray-500">Converted</p>
-      <p class="text-2xl font-bold text-green-600">{{ stats.converted }}</p>
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Converted (30d)</p>
+      <p class="text-3xl font-bold">{{ stats.converted_30d }}</p>
     </div>
-    <div class="bg-white rounded-xl border border-gray-200 p-5">
-      <p class="text-sm text-gray-500">Expired / Lost</p>
-      <p class="text-2xl font-bold text-red-600">{{ stats.expired }}</p>
-    </div>
-    <div class="bg-white rounded-xl border border-gray-200 p-5">
-      <p class="text-sm text-gray-500">Conversion Rate</p>
-      <p class="text-2xl font-bold text-brand-600">{{ stats.conversion_rate }}%</p>
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Conversion Rate</p>
+      <p class="text-3xl font-bold">{{ (stats.conversion_rate * 100) | round(1) }}%</p>
     </div>
   </div>
 
-  <div class="bg-white rounded-xl border border-gray-200 p-5">
-    <h2 class="text-lg font-semibold text-gray-900 mb-4">Trial Signups Trend</h2>
-    {% if stats.trend %}
-    <div class="overflow-x-auto">
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+    <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+      <h2 class="text-lg font-semibold">Expiring Trials (7 days)</h2>
+    </div>
+    <div class="p-2">
       <table class="w-full text-sm">
         <thead>
-          <tr class="text-left text-gray-500 border-b border-gray-100">
-            <th class="pb-2">Date</th>
-            <th class="pb-2 text-right">Signups</th>
+          <tr class="text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+            <th class="px-4 py-3">Organization</th>
+            <th class="px-4 py-3">Started</th>
+            <th class="px-4 py-3">Expires</th>
+            <th class="px-4 py-3">Owner</th>
           </tr>
         </thead>
-        <tbody>
-          {% for t in stats.trend %}
-          <tr class="border-b border-gray-50">
-            <td class="py-2">{{ t.date }}</td>
-            <td class="py-2 text-right">{{ t.count }}</td>
+        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+          {% for org in stats.expiring_trials %}
+          <tr class="hover:bg-gray-50 dark:hover:bg-gray-700/50">
+            <td class="px-4 py-3 font-medium">{{ org.name }}</td>
+            <td class="px-4 py-3 text-gray-500">{{ org.created_at.strftime('%b %d') }}</td>
+            <td class="px-4 py-3 text-amber-600 font-medium">{{ org.trial_ends_at.strftime('%b %d') }}</td>
+            <td class="px-4 py-3">{{ org.owner.email }}</td>
           </tr>
+          {% else %}
+          <tr><td class="px-4 py-6 text-center text-gray-500" colspan="4">No expiring trials</td></tr>
           {% endfor %}
         </tbody>
       </table>
     </div>
-    {% else %}
-    <p class="text-gray-500">No trial data for this period.</p>
-    {% endif %}
   </div>
 </div>
 {% endblock %}

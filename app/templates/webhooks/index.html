@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Webhook Endpoints — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto">
+  <div class="flex items-center justify-between mb-8">
+    <div>
+      <h1 class="text-3xl font-bold tracking-tight">Webhook Endpoints</h1>
+      <p class="text-gray-500 dark:text-gray-400 mt-1">Receive events from SaaSForge in real-time</p>
+    </div>
+    <button onclick="document.getElementById('createForm').classList.toggle('hidden')"
+            class="bg-brand-600 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-brand-700 transition-all shadow-sm text-sm">
+      Add Endpoint
+    </button>
+  </div>
+
+  <div id="createForm" class="hidden mb-8 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+    <h2 class="text-lg font-semibold mb-4">New Webhook Endpoint</h2>
+    <form method="POST" action="{{ url_for('webhooks.create') }}" class="space-y-4">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <div>
+        <label class="block text-sm font-medium mb-1.5">Endpoint URL</label>
+        <input type="url" name="url" required placeholder="https://api.your-app.com/webhooks/saasforge"
+               class="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-brand-500 outline-none">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-1.5">Description</label>
+        <input type="text" name="description" placeholder="e.g. Production webhook"
+               class="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-brand-500 outline-none">
+      </div>
+      <div>
+        <label class="block text-sm font-medium mb-2">Subscribe to Events</label>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-2">
+          {% for event in event_types %}
+          <label class="flex items-center gap-2 text-sm px-3 py-2 rounded-lg border border-gray-200 dark:border-gray-700 hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer">
+            <input type="checkbox" name="events" value="{{ event }}" class="rounded border-gray-300 text-brand-600">
+            <span>{{ event }}</span>
+          </label>
+          {% endfor %}
+        </div>
+      </div>
+      <button type="submit" class="bg-brand-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-brand-700">
+        Create Endpoint
+      </button>
+    </form>
+  </div>
+
+  {% if endpoints %}
+  <div class="space-y-4">
+    {% for ep in endpoints %}
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+      <div class="px-6 py-4 flex items-center justify-between border-b border-gray-100 dark:border-gray-700">
+        <div class="flex items-center gap-3">
+          <span class="w-2.5 h-2.5 rounded-full {{ 'bg-green-500' if ep.is_active else 'bg-gray-300' }}"></span>
+          <div>
+            <h3 class="font-semibold text-sm">{{ ep.description or 'Webhook Endpoint' }}</h3>
+            <code class="text-xs text-gray-500">{{ ep.url }}</code>
+          </div>
+        </div>
+        <div class="flex items-center gap-2">
+          <a href="{{ url_for('webhooks.delivery_history', endpoint_id=ep.id) }}"
+             class="text-xs text-brand-600 hover:text-brand-700 font-medium">History</a>
+          <form method="POST" action="{{ url_for('webhooks.test', endpoint_id=ep.id) }}" class="inline">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="text-xs text-gray-500 hover:text-gray-700 font-medium">Test</button>
+          </form>
+          <form method="POST" action="{{ url_for('webhooks.delete', endpoint_id=ep.id) }}" class="inline"
+                onsubmit="return confirm('Delete this endpoint?')">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+            <button type="submit" class="text-xs text-red-500 hover:text-red-700 font-medium">Delete</button>
+          </form>
+        </div>
+      </div>
+      <div class="px-6 py-3">
+        <details>
+          <summary class="text-xs text-gray-500 cursor-pointer hover:text-gray-700">Secret &amp; Events</summary>
+          <div class="mt-2 space-y-2">
+            <div>
+              <span class="text-xs text-gray-400">Secret:</span>
+              <code class="text-xs font-mono bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded select-all">{{ ep.secret }}</code>
+            </div>
+            <div class="flex flex-wrap gap-1">
+              {% for event in ep.events %}
+              <span class="text-xs bg-gray-100 dark:bg-gray-700 px-2 py-0.5 rounded-full">{{ event }}</span>
+              {% endfor %}
+            </div>
+          </div>
+        </details>
+      </div>
+    </div>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="text-center py-16 bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+    <svg class="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/>
+    </svg>
+    <p class="text-gray-500">No webhook endpoints configured.</p>
+    <p class="text-sm text-gray-400 mt-1">Create an endpoint to receive real-time events from your organization.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -8,7 +8,7 @@ def _compute_engine_options(db_uri):
     if not db_uri.startswith("sqlite"):
         opts.update({
             "pool_size": int(os.environ.get("DATABASE_POOL_SIZE", 10)),
-            "pool_max_overflow": int(os.environ.get("DATABASE_POOL_MAX_OVERFLOW", 20)),
+            "max_overflow": int(os.environ.get("DATABASE_POOL_MAX_OVERFLOW", 20)),
             "pool_recycle": 300,
         })
     return opts
@@ -125,6 +125,9 @@ class Config:
 
     # Admin
     ADMIN_EMAIL = os.environ.get("ADMIN_EMAIL", "admin@saasforge.com")
+
+    # Demo Environment
+    DEMO_MODE = os.environ.get("DEMO_MODE", "false").lower() == "true"
 
     # Logging
     LOG_LEVEL = os.environ.get("LOG_LEVEL", "INFO")

@@ -13,8 +13,11 @@ from app.core.models import (
 )
 from app.services.analytics_service import AnalyticsService
 from app.services.audit_service import AuditService
+from app.services.business_metrics import BusinessMetricsService
 from app.services.decorators import require_admin
 from app.services.impersonation_service import ImpersonationService
+from app.services.performance_service import PerformanceMetrics, get_slow_queries
+from app.services.webhook_service import StripeWebhookProcessor
 
 admin_bp = Blueprint("admin", __name__)
 
@@ -328,6 +331,41 @@ def api_stats():
 def trial_analytics():
     stats = AnalyticsService.get_trial_conversion_stats(90)
     return render_template("admin/trial_analytics.html", stats=stats)
+
+
+@admin_bp.route("/performance")
+def performance():
+    data = PerformanceMetrics.get_dashboard_data()
+    slow_queries = get_slow_queries(20)
+    return render_template("admin/performance.html", data=data, slow_queries=slow_queries)
+
+
+@admin_bp.route("/business-metrics")
+def business_metrics():
+    metrics = BusinessMetricsService.get_all_metrics()
+    return render_template("admin/business_metrics.html", metrics=metrics)
+
+
+@admin_bp.route("/webhooks")
+def webhook_admin():
+    stats = StripeWebhookProcessor.get_event_stats()
+    return render_template("admin/webhooks.html", stats=stats)
+
+
+@admin_bp.route("/webhooks/retry", methods=["POST"])
+def retry_webhooks():
+    results = StripeWebhookProcessor.retry_failed_events()
+    flash(f"Retried {len(results)} webhook events.", "success")
+    return redirect(url_for("admin.webhook_admin"))
+
+
+@admin_bp.route("/reset-demo", methods=["POST"])
+def reset_demo():
+    """Reset all demo data to a clean state."""
+    from app.services.demo_service import reset_demo_data
+    result = reset_demo_data()
+    flash(f"Demo data reset: {len(result.get('created', []))} records recreated.", "success")
+    return redirect(url_for("admin.index"))
 
 
 @admin_bp.route("/impersonate", methods=["POST"])

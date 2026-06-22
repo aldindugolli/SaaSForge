@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+{% block title %}Business Metrics — {{ app_name }} Admin{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto">
+  <h1 class="text-3xl font-bold tracking-tight mb-8">Executive SaaS Metrics</h1>
+
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Monthly Recurring Revenue</p>
+      <p class="text-3xl font-bold text-green-600 dark:text-green-400">${{ "%.2f"|format(metrics.mrr) }}</p>
+    </div>
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Annual Recurring Revenue</p>
+      <p class="text-3xl font-bold text-green-600 dark:text-green-400">${{ "%.2f"|format(metrics.arr) }}</p>
+    </div>
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Churn Rate (30d)</p>
+      <p class="text-3xl font-bold {% if metrics.churn.churn_rate > 5 %}text-red-600{% elif metrics.churn.churn_rate > 2 %}text-amber-600{% else %}text-green-600{% endif %}">
+        {{ metrics.churn.churn_rate }}<span class="text-lg font-normal text-gray-400">%</span>
+      </p>
+      <p class="text-xs text-gray-400 mt-1">{{ metrics.churn.canceled }} canceled / {{ metrics.churn.subscribers_start + metrics.churn.new_subscribers }} total</p>
+    </div>
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Customer LTV</p>
+      <p class="text-3xl font-bold text-brand-600 dark:text-brand-400">${{ "%.2f"|format(metrics.ltv) }}</p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Trial Conversion Rate</p>
+      <p class="text-3xl font-bold">{{ metrics.trial_conversion.conversion_rate }}<span class="text-lg font-normal text-gray-400">%</span></p>
+      <div class="mt-3 space-y-1 text-xs text-gray-500">
+        <p>Total trials: {{ metrics.trial_conversion.total_trials }}</p>
+        <p>Converted: {{ metrics.trial_conversion.converted }}</p>
+        <p>Expired: {{ metrics.trial_conversion.expired }}</p>
+        <p>Still trialing: {{ metrics.trial_conversion.still_trialing }}</p>
+      </div>
+    </div>
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Active Organizations</p>
+      <p class="text-3xl font-bold">{{ metrics.active_organizations.total }}</p>
+      <div class="mt-3 space-y-1 text-xs text-gray-500">
+        {% for tier, count in metrics.active_organizations.by_tier.items() %}
+        <p class="capitalize">{{ tier }}: {{ count }}</p>
+        {% endfor %}
+        <p>New this month: {{ metrics.active_organizations.new_this_month }}</p>
+      </div>
+    </div>
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Growth Rate (30d)</p>
+      <p class="text-3xl font-bold {% if metrics.growth.user_growth_pct > 0 %}text-green-600{% else %}text-red-600{% endif %}">
+        {{ metrics.growth.user_growth_pct }}<span class="text-lg font-normal text-gray-400">%</span>
+      </p>
+      <div class="mt-3 space-y-1 text-xs text-gray-500">
+        <p>New users: {{ metrics.growth.users_current }}</p>
+        <p>Revenue growth: {{ metrics.growth.revenue_growth_pct }}%</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+    <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+      <h2 class="text-lg font-semibold">Revenue Trend</h2>
+    </div>
+    <div class="p-2">
+      {% for r in metrics.revenue_trend %}
+      <div class="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50">
+        <div>
+          <p class="text-sm font-medium text-gray-700 dark:text-gray-300">{{ r.month }}</p>
+          <p class="text-xs text-gray-400">{{ r.invoices }} invoices, {{ r.paying_organizations }} orgs</p>
+        </div>
+        <p class="text-sm font-semibold text-green-600">${{ "%.2f"|format(r.revenue) }}</p>
+      </div>
+      {% else %}
+      <div class="text-center py-8 text-gray-400 text-sm">No revenue data</div>
+      {% endfor %}
+    </div>
+  </div>
+</div>
+{% endblock %}

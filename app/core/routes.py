@@ -202,7 +202,54 @@ def health():
         healthy["cache"] = f"down: {e}"
         healthy["status"] = "degraded"
 
+    try:
+        import redis
+        from flask import current_app
+        redis_url = current_app.config.get("REDIS_URL", "redis://localhost:6379/0")
+        r = redis.from_url(redis_url)
+        r.ping()
+        healthy["queue"] = "up"
+    except Exception:
+        healthy["queue"] = "unavailable"
+
+    try:
+        from app.services.webhook_service import StripeWebhookProcessor
+        stats = StripeWebhookProcessor.get_event_stats()
+        healthy["webhook_events"] = stats["total"]
+        healthy["webhook_dead_letter"] = len(stats["dead_letter"])
+    except Exception:
+        healthy["webhook_events"] = 0
+
     healthy["response_time_ms"] = int((time.time() - start) * 1000)
 
     status_code = 200 if healthy["status"] == "ok" else 503
     return jsonify(healthy), status_code
+
+
+@core_bp.route("/health/detailed")
+def health_detailed():
+    """Detailed health check with component-level status."""
+    from app.observability import (
+        HealthStatus,
+        check_database,
+        check_email_service,
+        check_queue,
+        check_redis,
+        check_stripe,
+    )
+
+    hs = HealthStatus()
+    hs.check("database", check_database, "PostgreSQL connectivity")
+    hs.check("redis", check_redis, "Redis cache connectivity")
+    hs.check("queue", check_queue, "Background job queue (Redis)")
+    hs.check("stripe", check_stripe, "Stripe API connectivity")
+    hs.check("email", check_email_service, "Email service configuration")
+
+    return jsonify(hs.to_dict(detailed=True))
+
+
+@core_bp.route("/metrics")
+def metrics():
+    """Prometheus-compatible metrics endpoint."""
+    from app.observability import metrics_registry
+    return metrics_registry.render(), 200, {"Content-Type": "text/plain; version=0.0.4"}

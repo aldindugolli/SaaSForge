@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block title %}Webhook Events — {{ app_name }} Admin{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto">
+  <div class="flex items-center justify-between mb-8">
+    <h1 class="text-3xl font-bold tracking-tight">Stripe Webhook Processing</h1>
+    <form method="POST" action="{{ url_for('admin.retry_webhooks') }}">
+      <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+      <button type="submit" class="bg-brand-600 text-white px-5 py-2.5 rounded-xl font-semibold hover:bg-brand-700 transition-all shadow-sm text-sm">
+        Retry Failed Events
+      </button>
+    </form>
+  </div>
+
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Total Events</p>
+      <p class="text-3xl font-bold">{{ stats.total }}</p>
+    </div>
+    {% for status, count in stats.by_status.items() %}
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1 capitalize">{{ status }}</p>
+      <p class="text-3xl font-bold
+        {{ 'text-green-600' if status == 'completed' else
+           'text-yellow-600' if status == 'pending' or status == 'processing' else
+           'text-red-600' if status == 'failed' or status == 'dead_letter' else '' }}">
+        {{ count }}
+      </p>
+    </div>
+    {% endfor %}
+  </div>
+
+  {% if stats.dead_letter %}
+  <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+    <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+      <h2 class="text-lg font-semibold text-red-600">Dead-Letter Queue</h2>
+      <p class="text-xs text-gray-400 mt-1">Events that have exhausted all retry attempts</p>
+    </div>
+    <div class="p-2">
+      {% for ev in stats.dead_letter %}
+      <div class="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50">
+        <div class="min-w-0 flex-1">
+          <p class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            <code class="text-xs font-mono text-gray-500">{{ ev.id }}</code>
+            <span class="ml-2">{{ ev.type }}</span>
+          </p>
+          <p class="text-xs text-red-500 mt-0.5">{{ ev.error }}</p>
+        </div>
+        <div class="text-right shrink-0 ml-4">
+          <p class="text-xs text-gray-400">{{ ev.attempts }} attempts</p>
+          <p class="text-xs text-gray-400">{{ ev.updated_at }}</p>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}

@@ -150,6 +150,20 @@ def list_routes():
         click.echo(f"{route:<50} {methods:<20} {endpoint:<30}")
 
 
+@click.command("seed-demo-data")
+@with_appcontext
+def seed_demo_data():
+    """Seed comprehensive demo data for the demo environment."""
+    from app.services.demo_service import create_seed_data
+
+    result = create_seed_data()
+    click.echo(f"Demo data created: {len(result)} records.")
+    click.echo("  Admin: admin@saasforge.com / Admin123!")
+    click.echo("  Demo:  demo@saasforge.com / Demo123!")
+    click.echo("  Manager: manager@saasforge.com / Manager123!")
+    click.echo("  Member:  member@saasforge.com / Member123!")
+
+
 @click.command("schedule-jobs")
 @with_appcontext
 def schedule_jobs():

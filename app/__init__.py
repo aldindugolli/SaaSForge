@@ -1,4 +1,5 @@
-from datetime import UTC
+import logging
+from datetime import UTC, datetime, timezone
 
 from flask import Flask
 
@@ -15,6 +16,8 @@ from app.core.extensions import (
     swagger,
 )
 
+logger = logging.getLogger(__name__)
+
 
 def create_app(config_class=Config):
     app = Flask(__name__)
@@ -29,6 +32,9 @@ def create_app(config_class=Config):
     register_cli_commands(app)
     register_scheduled_jobs(app)
     init_oauth(app)
+    init_observability(app)
+    init_database_extensions(app)
+    init_demo_environment(app)
 
     return app
 
@@ -50,6 +56,7 @@ def initialize_extensions(app):
 
     with app.app_context():
         import app.core.models  # noqa: F401  ensure models registered
+        import app.services.webhook_service  # noqa: F401
 
 
 def register_blueprints(app):
@@ -62,6 +69,7 @@ def register_blueprints(app):
     from app.notifications.routes import notifications_bp
     from app.organizations.routes import org_bp
     from app.security.routes import security_bp
+    from app.webhooks.routes import webhooks_bp
 
     app.register_blueprint(core_bp)
     app.register_blueprint(auth_bp, url_prefix="/auth")
@@ -72,6 +80,7 @@ def register_blueprints(app):
     app.register_blueprint(notifications_bp, url_prefix="/notifications")
     app.register_blueprint(api_bp, url_prefix="/api/v1")
     app.register_blueprint(security_bp)
+    app.register_blueprint(webhooks_bp, url_prefix="/webhooks")
 
 
 def register_error_handlers(app):
@@ -95,8 +104,6 @@ def register_context_processors(app):
 
 
 def register_template_filters(app):
-    from datetime import datetime, timezone
-
     def humanize_date(dt):
         if not dt:
             return ""
@@ -120,16 +127,79 @@ def register_template_filters(app):
 
     app.jinja_env.filters["humanize"] = humanize_date
 
+    def format_currency(cents: int, currency: str = "USD") -> str:
+        """Format cents to currency string."""
+        from markupsafe import Markup
+        symbols = {"USD": "$", "EUR": "\u20ac", "GBP": "\u00a3"}
+        symbol = symbols.get(currency.upper(), "$")
+        # Return safe HTML for inline usage
+        return Markup(f"{symbol}{cents / 100:.2f}")
+
+    app.jinja_env.filters["currency"] = format_currency
+
+    def format_number(n: int) -> str:
+        """Format large numbers with K/M suffixes."""
+        if n >= 1_000_000:
+            return f"{n / 1_000_000:.1f}M"
+        if n >= 1_000:
+            return f"{n / 1_000:.1f}K"
+        return str(n)
+
+    app.jinja_env.filters["compact"] = format_number
+
+    def pct_change(current: float, previous: float) -> str:
+        """Format percentage change."""
+        if previous == 0:
+            return "+100%"
+        change = ((current - previous) / previous) * 100
+        sign = "+" if change >= 0 else ""
+        return f"{sign}{change:.1f}%"
+
+    app.jinja_env.filters["pct_change"] = pct_change
+
 
 def init_oauth(app):
     from app.auth.routes import init_oauth as _init_oauth
     _init_oauth(app)
 
 
+def init_observability(app):
+    """Initialize observability: structured logging, correlation IDs, metrics."""
+    from app.observability import CorrelationMiddleware, MetricsMiddleware, setup_logging
+    setup_logging(app)
+    CorrelationMiddleware(app)
+    MetricsMiddleware(app)
+    logger.info("Observability initialized")
+
+
+def init_database_extensions(app):
+    """Initialize database extensions (PostgreSQL-specific)."""
+    with app.app_context():
+        try:
+            from app.db import create_gin_indexes, create_expression_indexes, create_full_text_search, create_materialized_views
+            create_gin_indexes()
+            create_expression_indexes()
+            create_full_text_search()
+            create_materialized_views()
+        except Exception as e:
+            logger.warning(f"Database extensions setup skipped: {e}")
+
+
 def register_shell_context(app):
     @app.shell_context_processor
     def shell_context():
-        from app.core.models import Membership, Organization, Subscription, User
+        from app.core.models import (
+            Membership,
+            Notification,
+            Organization,
+            Subscription,
+            User,
+        )
+        from app.services.webhook_service import (
+            CustomerWebhookEndpoint,
+            WebhookDelivery,
+            WebhookEventLog,
+        )
 
         return {
             "db": db,
@@ -137,16 +207,28 @@ def register_shell_context(app):
             "Organization": Organization,
             "Membership": Membership,
             "Subscription": Subscription,
+            "Notification": Notification,
+            "WebhookEndpoint": CustomerWebhookEndpoint,
+            "WebhookDelivery": WebhookDelivery,
+            "WebhookEventLog": WebhookEventLog,
         }
 
 
 def register_cli_commands(app):
-    from app.core.cli import create_admin, list_routes, schedule_jobs, seed_data
+    from app.core.cli import create_admin, list_routes, schedule_jobs, seed_data, seed_demo_data
 
     app.cli.add_command(seed_data)
+    app.cli.add_command(seed_demo_data)
     app.cli.add_command(create_admin)
     app.cli.add_command(list_routes)
     app.cli.add_command(schedule_jobs)
+
+
+def init_demo_environment(app):
+    """Initialize demo environment safety middleware."""
+    from app.services.demo_service import DemoMiddleware
+    DemoMiddleware(app)
+    logger.info("Demo environment middleware initialized")
 
 
 def register_scheduled_jobs(app):

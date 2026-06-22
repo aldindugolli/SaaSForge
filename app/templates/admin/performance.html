@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% block title %}Performance — {{ app_name }} Admin{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto">
+  <h1 class="text-3xl font-bold tracking-tight mb-8">Performance Dashboard</h1>
+
+  <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Avg Response</p>
+      <p class="text-3xl font-bold">{{ data.avg_response_ms }}<span class="text-lg font-normal text-gray-400">ms</span></p>
+    </div>
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">P95 Response</p>
+      <p class="text-3xl font-bold">{{ data.p95_response_ms }}<span class="text-lg font-normal text-gray-400">ms</span></p>
+    </div>
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">P99 Response</p>
+      <p class="text-3xl font-bold">{{ data.p99_response_ms }}<span class="text-lg font-normal text-gray-400">ms</span></p>
+    </div>
+    <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm">
+      <p class="text-sm font-medium text-gray-500 dark:text-gray-400 mb-1">Error Rate (7d)</p>
+      <p class="text-3xl font-bold {% if data.error_rate_7d > 1 %}text-red-600{% endif %}">{{ data.error_rate_7d }}<span class="text-lg font-normal text-gray-400">%</span></p>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+      <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+        <h2 class="text-lg font-semibold">Slowest Endpoints</h2>
+      </div>
+      <div class="p-2">
+        {% for ep in data.slowest_endpoints %}
+        <div class="flex items-center justify-between px-4 py-3 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50">
+          <div class="min-w-0 flex-1">
+            <p class="text-sm font-medium text-gray-700 dark:text-gray-300 truncate">
+              <span class="text-xs font-mono text-gray-400">{{ ep.method }}</span>
+              {{ ep.endpoint }}
+            </p>
+            <p class="text-xs text-gray-400">{{ ep.request_count }} requests</p>
+          </div>
+          <div class="text-right shrink-0 ml-4">
+            <p class="text-sm font-semibold {% if ep.avg_ms > 1000 %}text-red-600{% elif ep.avg_ms > 500 %}text-amber-600{% endif %}">
+              {{ ep.avg_ms }}ms
+            </p>
+            <p class="text-xs text-gray-400">p95: {{ ep.p95_ms }}ms</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 shadow-sm">
+      <div class="px-6 py-4 border-b border-gray-100 dark:border-gray-700">
+        <h2 class="text-lg font-semibold">Slow Queries</h2>
+      </div>
+      <div class="p-2">
+        {% for sq in slow_queries %}
+        <div class="flex items-center justify-between px-4 py-2.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50">
+          <div class="min-w-0 flex-1">
+            <p class="text-sm text-gray-700 dark:text-gray-300 truncate">{{ sq.function }}</p>
+            <p class="text-xs text-gray-400">{{ sq.timestamp }}</p>
+          </div>
+          <p class="text-sm font-semibold text-amber-600 shrink-0 ml-4">{{ sq.duration_ms }}ms</p>
+        </div>
+        {% else %}
+        <div class="text-center py-8 text-gray-400 text-sm">No slow queries detected</div>
+        {% endfor %}
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

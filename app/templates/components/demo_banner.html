@@ -1,0 +1,19 @@
+{% if config.get('DEMO_MODE') %}
+<div class="bg-amber-500 dark:bg-amber-600 text-white text-sm font-medium text-center py-2 px-4 flex items-center justify-center gap-3 flex-wrap">
+    <span class="inline-flex items-center gap-1.5">
+        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"/>
+        </svg>
+        Demo Environment
+    </span>
+    <span class="text-amber-100 text-xs">Read-only preview — some actions are disabled</span>
+    {% if current_user.is_admin %}
+    <form action="{{ url_for('admin.reset_demo') }}" method="POST" class="inline" onsubmit="return confirm('Reset ALL demo data to its initial state? This cannot be undone.')">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+        <button type="submit" class="bg-white text-amber-700 px-3 py-0.5 rounded-lg text-xs font-semibold hover:bg-amber-50 transition-colors">
+            Reset Demo Data
+        </button>
+    </form>
+    {% endif %}
+</div>
+{% endif %}
