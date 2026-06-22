@@ -2,248 +2,370 @@
 {% block title %}Security — {{ app_name }}{% endblock %}
 {% block head %}
 <style>
+  @import url('https://fonts.googleapis.com/css2?family=Crimson+Pro:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@400;500;600&display=swap');
+
   :root {
-    --page-bg: #F3F0EB;
-    --border: #E5DFD6;
-    --border-light: #F0EBE3;
-    --hero-from: #1E293B;
-    --hero-to: #0F172A;
-    --score-gold: #D4A843;
-    --pine: #4B7B6B;
-    --pine-bg: #E8F0EC;
-    --brass: #B8863C;
-    --brass-bg: #F5EDE0;
-    --brick: #B84A4A;
-    --brick-bg: #F5E8E8;
-    --steel: #5A7B9A;
-    --steel-bg: #EAF0F4;
-    --text-sec: #736B64;
-    --text-muted: #A0988F;
+    --vellum: #F9F6EF;
+    --ink: #1A1A1A;
+    --ink-faded: #6B625A;
+    --ink-muted: #A69B8E;
+    --vermillion: #A01020;
+    --vermillion-glow: rgba(160, 16, 32, 0.08);
+    --gold: #C5A44E;
+    --gold-light: rgba(197, 164, 78, 0.2);
+    --oak: #5C4033;
+    --oak-faded: #D4CABD;
+    --seal-green: #3A7D5C;
+    --seal-green-bg: rgba(58, 125, 92, 0.1);
+    --seal-red: #B84A4A;
+    --seal-red-bg: rgba(184, 74, 74, 0.1);
+    --surface: #FFFFFF;
   }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  }
+
   .page-security {
-    background-color: var(--page-bg);
+    background-color: var(--vellum);
     min-height: 100%;
   }
-  .card-row {
-    transition: all 0.15s ease;
+
+  .wax-seal {
+    width: 88px;
+    height: 88px;
+    border-radius: 50%;
+    background: radial-gradient(circle at 35% 30%, #C01525, var(--vermillion) 55%, #801020);
+    box-shadow:
+      0 0 0 3px var(--gold),
+      0 0 0 5px var(--gold-light),
+      0 4px 20px rgba(160, 16, 32, 0.25);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    position: relative;
   }
-  .card-row:hover {
-    background-color: var(--border-light);
+
+  .wax-seal::after {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(255, 255, 255, 0.15);
   }
-  .card-row:not(:last-child) {
-    border-bottom: 1px solid var(--border-light);
+
+  .wax-seal-inner {
+    text-align: center;
+    color: white;
+    line-height: 1.2;
   }
-  .hex-pattern {
-    background-image: url("data:image/svg+xml,%3Csvg width='60' height='52' viewBox='0 0 60 52' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0l25.98 15v30L30 60 4.02 45V15z' fill='none' stroke='rgba(255,255,255,0.04)' stroke-width='1'/%3E%3C/svg%3E");
-    background-size: 40px 35px;
+
+  .wax-seal-inner .seal-icon {
+    font-size: 24px;
+    filter: drop-shadow(0 1px 2px rgba(0,0,0,0.3));
   }
-  .score-number {
-    font-size: 2.75rem;
-    line-height: 1;
-    letter-spacing: -0.03em;
+
+  .seal-ring {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    border: 2px solid var(--gold);
+    flex-shrink: 0;
   }
-  .vault-shield {
-    filter: drop-shadow(0 4px 12px rgba(212, 168, 67, 0.25));
+
+  .seal-ring-sm {
+    width: 22px;
+    height: 22px;
+    border-width: 1.5px;
+  }
+
+  .rule {
+    height: 1px;
+    background: var(--oak-faded);
+    margin: 1.5rem 0;
+  }
+
+  .rule-thick {
+    height: 2px;
+    background: var(--oak);
+    width: 3rem;
+    margin: 0 0 1rem 0;
+  }
+
+  .doc-card {
+    background: var(--surface);
+    border: 1px solid var(--oak-faded);
+    border-radius: 0;
+  }
+
+  .doc-card-header {
+    border-bottom: 1px solid var(--oak-faded);
+    padding: 0.875rem 1.25rem;
+  }
+
+  .doc-row {
+    padding: 0.625rem 1.25rem;
+    transition: background 0.12s ease;
+    border-left: 2px solid transparent;
+  }
+
+  .doc-row:hover {
+    background: var(--vermillion-glow);
+    border-left-color: var(--vermillion);
+  }
+
+  .doc-row + .doc-row {
+    border-top: 1px solid var(--oak-faded);
+  }
+
+  .status-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .seal-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-family: 'Crimson Pro', 'Georgia', serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .factor-card {
+    border: 1px solid var(--oak-faded);
+    background: var(--surface);
+    border-radius: 0;
+    padding: 1rem 1.25rem;
+    transition: box-shadow 0.15s ease;
+  }
+
+  .factor-card:hover {
+    box-shadow: 0 2px 12px rgba(90, 64, 51, 0.08);
+  }
+
+  .timeline-connector {
+    position: absolute;
+    left: 11px;
+    top: 18px;
+    bottom: 0;
+    width: 1px;
+    background: var(--oak-faded);
   }
 </style>
 {% endblock %}
 {% block content %}
-<div class="page-security -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+<div class="page-security -mx-4 sm:-mx-6 lg:-mx-8 px-4 sm:px-6 lg:px-8 py-8 sm:py-10">
+  <div class="max-w-4xl mx-auto">
 
-  {% set security_score = 0 +
-    (20 if current_user.totp_enabled else 0) +
-    (20 if current_user.email_verified else 0) +
-    (20 if current_user.is_admin else 0) +
-    (20 if current_user.password_hash else 0) +
-    (20 if recent_logins|length > 0 else 0)
-  %}
+    {% set is_secure = current_user.totp_enabled and current_user.email_verified %}
+    {% set security_score = 0 +
+      (25 if current_user.totp_enabled else 0) +
+      (25 if current_user.email_verified else 0) +
+      (25 if current_user.password_hash else 0) +
+      (25 if current_user.is_admin else 15) +
+      (10 if recent_logins|length > 0 else 0)
+    %}
 
-  <div class="max-w-5xl mx-auto">
-
-    <div class="flex items-center justify-between mb-6">
-      <div>
-        <h1 class="text-xl sm:text-2xl font-bold tracking-tight" style="color: var(--text)">Security</h1>
-        <p class="text-sm mt-0.5" style="color: var(--text-sec)">Your account's security posture at a glance</p>
-      </div>
-      <a href="{{ url_for('core.two_factor_setup') if not current_user.totp_enabled else url_for('core.settings') }}"
-         class="inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-medium transition-colors"
-         style="border-color: var(--border); color: var(--text); background: white;">
-        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/>
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
-        </svg>
-        {{ 'Settings' if current_user.totp_enabled else 'Enable 2FA' }}
-      </a>
-    </div>
-
-    <div class="relative overflow-hidden rounded-2xl mb-8 hex-pattern" style="background: linear-gradient(135deg, var(--hero-from), var(--hero-to));">
-      <div class="relative z-10 p-6 sm:p-8">
-        <div class="flex items-center gap-5">
-          <div class="w-16 h-16 rounded-2xl flex items-center justify-center flex-shrink-0 vault-shield" style="background: rgba(212, 168, 67, 0.12);">
-            <svg class="w-8 h-8" style="color: var(--score-gold);" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
-            </svg>
-          </div>
-          <div>
-            <p class="text-sm font-medium uppercase tracking-widest" style="color: rgba(255,255,255,0.5);">Security Score</p>
-            <div class="flex items-baseline gap-1.5 mt-0.5">
-              <span class="font-bold score-number" style="color: var(--score-gold);">{{ security_score }}</span>
-              <span style="color: rgba(255,255,255,0.3); font-size: 1.25rem; font-weight: 300;">/ 100</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 sm:gap-4 mb-8">
-      <div class="rounded-xl p-4 flex items-center gap-3" style="background: white; border: 1px solid var(--border);">
-        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: {{ 'var(--pine-bg)' if current_user.totp_enabled else '#F0EBE3' }};">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: {{ 'var(--pine)' if current_user.totp_enabled else 'var(--text-muted)' }};">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
-          </svg>
-        </div>
-        <div>
-          <p class="text-sm font-medium" style="color: var(--text)">Two-Factor Auth</p>
-          <p class="text-xs" style="color: {{ 'var(--pine)' if current_user.totp_enabled else 'var(--text-muted)' }};">{{ 'Enabled' if current_user.totp_enabled else 'Disabled' }}</p>
-        </div>
-      </div>
-      <div class="rounded-xl p-4 flex items-center gap-3" style="background: white; border: 1px solid var(--border);">
-        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: {{ 'var(--pine-bg)' if current_user.email_verified else 'var(--brass-bg)' }};">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: {{ 'var(--pine)' if current_user.email_verified else 'var(--brass)' }};">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/>
-          </svg>
-        </div>
-        <div>
-          <p class="text-sm font-medium" style="color: var(--text)">Email Verified</p>
-          <p class="text-xs" style="color: {{ 'var(--pine)' if current_user.email_verified else 'var(--brass)' }};">{{ 'Verified' if current_user.email_verified else 'Pending' }}</p>
-        </div>
-      </div>
-      <div class="rounded-xl p-4 flex items-center gap-3" style="background: white; border: 1px solid var(--border);">
-        <div class="w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0" style="background: var(--steel-bg);">
-          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: var(--steel);">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/>
-          </svg>
-        </div>
-        <div>
-          <p class="text-sm font-medium" style="color: var(--text)">API Keys</p>
-          <p class="text-xs" style="color: var(--text-sec);">{{ api_keys|length }} active</p>
-        </div>
-      </div>
-    </div>
-
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-4 sm:mb-6">
-      <div class="rounded-xl overflow-hidden" style="background: white; border: 1px solid var(--border);">
-        <div class="px-5 py-3.5 flex items-center justify-between" style="border-bottom: 1px solid var(--border-light);">
-          <h2 class="text-sm font-semibold" style="color: var(--text)">Recent Logins</h2>
-          {% if recent_logins %}
-          <span class="text-xs" style="color: var(--text-muted);">{{ recent_logins|length }} events</span>
+    <div class="flex flex-col sm:flex-row items-center sm:items-start gap-6 sm:gap-8 mb-8">
+      <div class="wax-seal">
+        <div class="wax-seal-inner">
+          {% if is_secure %}
+          <div class="seal-icon">&#10003;</div>
+          <div style="font-family: 'Crimson Pro', Georgia, serif; font-size: 0.5rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin-top: 1px;">Secure</div>
+          {% else %}
+          <div class="seal-icon">&#9888;</div>
+          <div style="font-family: 'Crimson Pro', Georgia, serif; font-size: 0.45rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; margin-top: 1px;">Review</div>
           {% endif %}
+        </div>
+      </div>
+      <div class="text-center sm:text-left">
+        <p class="text-xs font-semibold uppercase tracking-[0.15em]" style="color: var(--ink-faded);">Security Brief</p>
+        <h1 class="text-2xl sm:text-3xl font-bold mt-1 leading-tight" style="color: var(--ink); font-family: 'Crimson Pro', Georgia, serif;">
+          {% if is_secure %}Your account is secure{% else %}Your account needs attention{% endif %}
+        </h1>
+        <p class="text-sm mt-1.5" style="color: var(--ink-faded);">
+          {% if is_secure %}All critical security measures are active.{% else %}Complete the recommended actions below.{% endif %}
+          &nbsp;Score: <span style="color: {{ 'var(--seal-green)' if security_score >= 50 else 'var(--vermillion)' }}; font-weight: 600;">{{ security_score }}/100</span>
+        </p>
+      </div>
+    </div>
+
+    <div class="rule"></div>
+
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-8">
+      <div class="factor-card flex items-center gap-3">
+        <div class="seal-ring seal-ring-sm" style="border-color: {{ 'var(--seal-green)' if current_user.totp_enabled else 'var(--oak-faded)' }};">
+          {% if current_user.totp_enabled %}
+          <svg class="w-3 h-3" fill="none" stroke="var(--seal-green)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+          {% else %}
+          <span style="color: var(--ink-muted); font-size: 0.8rem;">&mdash;</span>
+          {% endif %}
+        </div>
+        <div>
+          <p class="text-sm font-medium" style="color: var(--ink);">Two-Factor Auth</p>
+          <p class="text-xs" style="color: {{ 'var(--seal-green)' if current_user.totp_enabled else 'var(--ink-muted)' }};">
+            {{ 'Active' if current_user.totp_enabled else 'Not set up' }}
+          </p>
+        </div>
+      </div>
+      <div class="factor-card flex items-center gap-3">
+        <div class="seal-ring seal-ring-sm" style="border-color: {{ 'var(--seal-green)' if current_user.email_verified else 'var(--oak-faded)' }};">
+          {% if current_user.email_verified %}
+          <svg class="w-3 h-3" fill="none" stroke="var(--seal-green)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
+          {% else %}
+          <span style="color: var(--ink-muted); font-size: 0.8rem;">&mdash;</span>
+          {% endif %}
+        </div>
+        <div>
+          <p class="text-sm font-medium" style="color: var(--ink);">Email Verified</p>
+          <p class="text-xs" style="color: {{ 'var(--seal-green)' if current_user.email_verified else 'var(--ink-muted)' }};">
+            {{ 'Verified' if current_user.email_verified else 'Not verified' }}
+          </p>
+        </div>
+      </div>
+      <div class="factor-card flex items-center gap-3">
+        <div class="seal-ring seal-ring-sm" style="border-color: var(--oak-faded);">
+          <svg class="w-3 h-3" fill="none" stroke="var(--ink-muted)" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z"/></svg>
+        </div>
+        <div>
+          <p class="text-sm font-medium" style="color: var(--ink);">API Keys</p>
+          <p class="text-xs" style="color: var(--ink-faded);">{{ api_keys|length }} active</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5 mb-6">
+      <div class="doc-card">
+        <div class="doc-card-header">
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-semibold" style="color: var(--ink);">Recent Logins</h2>
+            {% if recent_logins %}
+            <span class="text-xs" style="color: var(--ink-muted);">{{ recent_logins|length }} entries</span>
+            {% endif %}
+          </div>
         </div>
         <div>
           {% if recent_logins %}
           {% for log in recent_logins %}
-          <div class="card-row px-5 py-2.5 flex items-center justify-between" style="border-left: 2px solid transparent;">
+          <div class="doc-row flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background: var(--pine);"></span>
-              <span class="text-sm font-mono" style="color: var(--text); font-size: 0.8125rem;">{{ log.ip_address or 'Unknown IP' }}</span>
+              <span class="status-dot" style="background: var(--seal-green);"></span>
+              <span class="text-sm" style="color: var(--ink); font-family: 'Courier New', monospace; font-size: 0.8125rem;">{{ log.ip_address or 'Unknown' }}</span>
             </div>
-            <span class="text-xs" style="color: var(--text-muted);">{{ log.created_at | humanize }}</span>
+            <span class="text-xs" style="color: var(--ink-muted);">{{ log.created_at | humanize }}</span>
           </div>
           {% endfor %}
           {% else %}
-          <div class="px-5 py-8 text-center text-sm" style="color: var(--text-muted);">
-            <p>No recent logins</p>
+          <div class="doc-row text-center" style="color: var(--ink-muted);">
+            <p class="text-sm py-4">No logins recorded yet.</p>
           </div>
           {% endif %}
         </div>
       </div>
 
-      <div class="rounded-xl overflow-hidden" style="background: white; border: 1px solid var(--border);">
-        <div class="px-5 py-3.5 flex items-center justify-between" style="border-bottom: 1px solid var(--border-light);">
-          <h2 class="text-sm font-semibold" style="color: var(--text)">Failed Login Attempts</h2>
-          {% if failed_logins %}
-          <span class="text-xs" style="color: var(--text-muted);">{{ failed_logins|length }} events</span>
-          {% endif %}
+      <div class="doc-card">
+        <div class="doc-card-header">
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-semibold" style="color: var(--ink);">Failed Attempts</h2>
+            {% if failed_logins %}
+            <span class="text-xs" style="color: var(--ink-muted);">{{ failed_logins|length }} entries</span>
+            {% endif %}
+          </div>
         </div>
         <div>
           {% if failed_logins %}
           {% for log in failed_logins %}
-          <div class="card-row px-5 py-2.5 flex items-center justify-between" style="border-left: 2px solid transparent;">
+          <div class="doc-row flex items-center justify-between">
             <div class="flex items-center gap-3">
-              <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background: var(--brick);"></span>
-              <span class="text-sm font-mono" style="color: var(--brick); font-size: 0.8125rem;">{{ log.ip_address or 'Unknown IP' }}</span>
+              <span class="status-dot" style="background: var(--seal-red);"></span>
+              <span class="text-sm" style="color: var(--seal-red); font-family: 'Courier New', monospace; font-size: 0.8125rem;">{{ log.ip_address or 'Unknown' }}</span>
             </div>
-            <span class="text-xs" style="color: var(--text-muted);">{{ log.created_at | humanize }}</span>
+            <span class="text-xs" style="color: var(--ink-muted);">{{ log.created_at | humanize }}</span>
           </div>
           {% endfor %}
           {% else %}
-          <div class="px-5 py-8 text-center">
-            <svg class="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="color: var(--pine);">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-            <p class="text-sm" style="color: var(--text-muted);">No failed attempts</p>
+          <div class="doc-row text-center py-4">
+            <p class="text-sm" style="color: var(--seal-green);">
+              <span class="seal-badge">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/></svg>
+                No failed attempts
+              </span>
+            </p>
           </div>
           {% endif %}
         </div>
       </div>
     </div>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
-      <div class="rounded-xl overflow-hidden" style="background: white; border: 1px solid var(--border);">
-        <div class="px-5 py-3.5 flex items-center justify-between" style="border-bottom: 1px solid var(--border-light);">
-          <h2 class="text-sm font-semibold" style="color: var(--text)">Active Sessions</h2>
-          {% if active_sessions %}
-          <a href="{{ url_for('core.sessions') }}" class="text-xs font-medium transition-colors hover:opacity-80" style="color: var(--steel);">View all</a>
-          {% endif %}
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div class="doc-card">
+        <div class="doc-card-header">
+          <div class="flex items-center justify-between">
+            <h2 class="text-sm font-semibold" style="color: var(--ink);">Active Sessions</h2>
+            {% if active_sessions %}
+            <a href="{{ url_for('core.sessions') }}" class="text-xs font-medium" style="color: var(--oak); text-decoration: underline; text-underline-offset: 2px;">View all</a>
+            {% endif %}
+          </div>
         </div>
         <div>
           {% if active_sessions %}
           {% for s in active_sessions %}
-          <div class="card-row px-5 py-2.5 flex items-center justify-between" style="border-left: 2px solid transparent;">
+          <div class="doc-row flex items-center justify-between">
             <div class="flex items-center gap-3 min-w-0">
-              <span class="w-1.5 h-1.5 rounded-full flex-shrink-0" style="background: var(--steel);"></span>
+              <span class="status-dot" style="background: var(--oak);"></span>
               <div class="min-w-0">
-                <p class="text-sm truncate" style="color: var(--text);">{{ s.browser or 'Unknown' }}</p>
-                <p class="text-xs" style="color: var(--text-sec);">{{ s.ip_address or 'Unknown IP' }}</p>
+                <p class="text-sm truncate" style="color: var(--ink);">{{ s.browser or 'Unknown' }}</p>
+                <p class="text-xs" style="color: var(--ink-faded);">{{ s.ip_address or 'Unknown IP' }}</p>
               </div>
             </div>
-            <span class="text-xs flex-shrink-0" style="color: var(--text-muted);">{{ s.last_activity_at | humanize }}</span>
+            <span class="text-xs flex-shrink-0" style="color: var(--ink-muted);">{{ s.last_activity_at | humanize }}</span>
           </div>
           {% endfor %}
           {% else %}
-          <div class="px-5 py-8 text-center text-sm" style="color: var(--text-muted);">
-            <p>No other active sessions</p>
+          <div class="doc-row text-center" style="color: var(--ink-muted);">
+            <p class="text-sm py-4">No other active sessions.</p>
           </div>
           {% endif %}
         </div>
       </div>
 
-      <div class="rounded-xl overflow-hidden" style="background: white; border: 1px solid var(--border);">
-        <div class="px-5 py-3.5" style="border-bottom: 1px solid var(--border-light);">
-          <h2 class="text-sm font-semibold" style="color: var(--text)">Activity Timeline</h2>
+      <div class="doc-card">
+        <div class="doc-card-header">
+          <h2 class="text-sm font-semibold" style="color: var(--ink);">Activity Log</h2>
         </div>
-        <div class="max-h-80 overflow-y-auto">
+        <div class="max-h-72 overflow-y-auto">
+          {% if recent_audit %}
           <div class="relative px-5 py-3">
-            {% if recent_audit %}
-            <div class="absolute left-[1.625rem] top-0 bottom-0" style="width: 1px; background: var(--border-light);"></div>
+            <div class="timeline-connector"></div>
             {% for log in recent_audit %}
-            <div class="flex items-start gap-4 pb-3.5 relative group">
-              <div class="w-2 h-2 rounded-full flex-shrink-0 z-10 mt-1.5" style="background: var(--steel); ring: 2px solid white; box-shadow: 0 0 0 2px white;"></div>
-              <div class="flex-1 min-w-0">
-                <p class="text-sm font-medium" style="color: var(--text);">{{ log.action | replace('user.', '') | replace('org.', '') | replace('_', ' ') | title }}</p>
+            <div class="flex items-start gap-3 pb-3.5 relative">
+              <div class="w-[11px] flex-shrink-0 flex items-center justify-center z-10" style="background: var(--surface);">
+                <div class="w-[5px] h-[5px] rounded-full" style="background: var(--oak-faded); box-shadow: 0 0 0 3px var(--surface);"></div>
+              </div>
+              <div class="flex-1 min-w-0" style="margin-top: -1px;">
+                <p class="text-sm" style="color: var(--ink);">{{ log.action | replace('user.', '') | replace('org.', '') | replace('_', ' ') | title }}</p>
                 {% if log.log_metadata %}
-                <p class="text-xs mt-0.5 truncate" style="color: var(--text-muted);">{{ log.log_metadata | tojson }}</p>
+                <p class="text-xs mt-0.5 truncate" style="color: var(--ink-muted);">{{ log.log_metadata | tojson }}</p>
                 {% endif %}
-                <p class="text-xs mt-0.5" style="color: var(--text-muted);">{{ log.created_at | humanize }}</p>
+                <p class="text-xs" style="color: var(--ink-muted);">{{ log.created_at | humanize }}</p>
               </div>
             </div>
             {% endfor %}
-            {% else %}
-            <div class="py-8 text-center text-sm" style="color: var(--text-muted);">
-              <p>No recent activity</p>
-            </div>
-            {% endif %}
           </div>
+          {% else %}
+          <div class="doc-row text-center" style="color: var(--ink-muted);">
+            <p class="text-sm py-4">No recent activity.</p>
+          </div>
+          {% endif %}
         </div>
       </div>
     </div>
