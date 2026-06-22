@@ -95,11 +95,13 @@ def register_context_processors(app):
 
 
 def register_template_filters(app):
-    from datetime import datetime
+    from datetime import datetime, timezone
 
     def humanize_date(dt):
         if not dt:
             return ""
+        if dt.tzinfo is None:
+            dt = dt.replace(tzinfo=timezone.utc)
         now = datetime.now(UTC)
         diff = now - dt
         seconds = diff.total_seconds()

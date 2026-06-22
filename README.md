@@ -8,17 +8,22 @@ A production-ready Flask SaaS boilerplate — authentication, team management, s
 
 | Category | Capabilities |
 |----------|-------------|
-| **Authentication** | Email/password & Google OAuth, email verification, password reset, session management |
-| **Multi-Tenant Orgs** | Teams with roles (Owner/Admin/Member), invitations, ownership transfer |
-| **Subscription Billing** | Stripe Checkout, Customer Portal, webhooks, invoices, trial periods |
-| **Admin Dashboard** | User/org management, ban/disable, audit logs, subscription overview |
-| **Analytics** | User growth, revenue/MRR tracking, churn rate, subscription distribution (Chart.js) |
+| **Authentication** | Email/password & Google OAuth, email verification, password reset, 2FA (TOTP) |
+| **Multi-Tenant Orgs** | Teams with roles (Owner/Admin/Member + granular permissions), invitations, ownership transfer |
+| **Subscription Billing** | Stripe Checkout, Customer Portal, webhooks, invoices, trial periods, entitlements |
+| **Admin Dashboard** | User/org management, ban/disable, audit logs, subscription overview, API analytics, trial analytics |
+| **Analytics** | User growth, revenue/MRR tracking, churn rate, subscription distribution, trial conversion (Chart.js) |
 | **Background Jobs** | Redis-backed RQ workers for email, webhooks, data cleanup, scheduled reports |
-| **REST API** | Versioned (`/api/v1`), API keys, rate limiting, usage tracking |
+| **REST API** | Versioned (`/api/v1`), API keys, rate limiting, usage tracking, OpenAPI docs (`/apidocs/`) |
 | **Notifications** | In-app (HTMX) and email (SendGrid) |
 | **Feature Flags** | Global, organization, and user-level |
-| **Audit Logging** | Track all critical actions with searchable logs |
-| **RBAC** | Reusable decorators (`@require_owner`, `@require_admin`, `@require_role`) |
+| **Audit Logging** | Track all critical actions with searchable logs, org activity feed |
+| **RBAC** | Granular permissions (`@require_permission`), `@require_owner`, `@require_admin` |
+| **Sessions** | Track active sessions, browser/OS/IP, revoke individual or all |
+| **Security Center** | Overview of login activity, failed attempts, sessions, API keys, 2FA status |
+| **Health Monitoring** | `GET /health` endpoint with DB + cache status |
+| **CI/CD Security** | Bandit SAST, Safety dependency scan, Gitleaks secrets detection |
+| **Architecture Docs** | ADRs in `docs/adr/` |
 | **Dark Mode** | Full light/dark theme, cookie-persisted |
 | **Responsive** | Mobile-first with TailwindCSS |
 
@@ -37,7 +42,10 @@ A production-ready Flask SaaS boilerplate — authentication, team management, s
 | CI/CD | GitHub Actions (lint → test → build → deploy) |
 | Deployment | Railway, VPS |
 | Monitoring | Sentry SDK |
-| API Documentation | Flasgger + APISpec |
+| API Documentation | Flasgger + APISpec (interactive `/apidocs/`) |
+| 2FA | pyotp TOTP with QR setup, backup codes |
+| Static Analysis | Ruff, Bandit, Safety, Gitleaks |
+| Health Checks | `/health` endpoint (DB + cache status) |
 
 ## Quick Start
 
@@ -91,13 +99,14 @@ saasforge/
 │   ├── api/             # REST API v1 (API key auth)
 │   ├── auth/            # Authentication (login, register, OAuth, password reset)
 │   ├── billing/         # Stripe billing & webhooks
-│   ├── core/            # Config, models (11), extensions, CLI, error handlers
+│   ├── core/            # Config, models (13), extensions, CLI, error handlers
 │   ├── notifications/   # In-app notification system
 │   ├── organizations/   # Team management & invitations
-│   ├── services/        # Business logic layer (8 service classes)
+│   ├── security/        # Security center dashboard
+│   ├── services/        # Business logic layer (14 service classes)
 │   ├── static/          # CSS, JS
-│   └── templates/       # Jinja2 templates (30+ pages)
-├── tests/               # 35+ pytest unit & integration tests
+│   └── templates/       # Jinja2 templates (35+ pages)
+├── tests/               # 55+ pytest unit & integration tests
 ├── migrations/          # Alembic migration config
 ├── docker/              # Nginx config for production
 ├── .github/workflows/   # CI/CD pipeline
@@ -141,11 +150,18 @@ Data is isolated by `organization_id` on all resources.
 | `AuthService` | Register, login, password management, email verification, Google OAuth |
 | `OrganizationService` | Org CRUD, invitations, member roles, ownership transfer |
 | `BillingService` | Stripe Checkout, Customer Portal, webhook handling (6 event types) |
-| `AnalyticsService` | Dashboard stats, user/revenue growth, churn, MRR, plan distribution |
+| `AnalyticsService` | Dashboard stats, user/revenue growth, churn, MRR, trial conversion, plan distribution |
 | `EmailService` | SendGrid with dev log fallback, 5 email templates |
 | `NotificationService` | In-app notifications CRUD, unread count, bulk create |
 | `AuditService` | Audit logging with decorator support, searchable logs |
 | `BaseService[T]` | Generic CRUD base class for data access |
+| `CacheService` | Redis + in-memory fallback, pattern invalidation, analytics/org caching |
+| `SessionService` | User session tracking, create/revoke/list/touch |
+| `JobScheduler` | RQ job enqueue with `JobRecord` persistence, scheduling, cancel |
+| `ImpersonationService` | Admin user impersonation with audit trail |
+| `EntitlementService` | Plan-based feature checks, max members/projects |
+| `RoleService` | Granular permissions per role (13 permissions, 3 roles) |
+| `TwoFactorService` | TOTP generation, QR codes, backup codes, verification |
 
 ### Background Jobs
 
@@ -164,6 +180,10 @@ Authenticate with `X-API-Key` header:
 ```bash
 curl -H "X-API-Key: sf_your_api_key" http://localhost:5000/api/v1/me
 ```
+
+### Interactive Docs
+
+Open `http://localhost:5000/apidocs/` for the Swagger UI.
 
 ### Endpoints
 
@@ -237,13 +257,16 @@ Test structure:
 - CSRF protection (Flask-WTF) on all forms
 - Session-based auth with HTTP-only secure cookies
 - Password hashing via bcrypt (Werkzeug)
+- Two-factor authentication (TOTP) with authenticator apps + backup codes
 - Rate limiting (Flask-Limiter + Redis)
 - Input validation at service layer
 - XSS protection via Jinja2 auto-escaping
 - Audit logging for all critical actions
-- RBAC decorators enforce permissions
+- RBAC with granular permissions (13 permissions across 3 roles)
 - Stripe webhook signature verification
 - SQL injection protection via SQLAlchemy ORM
+- Health monitoring endpoint (`GET /health`)
+- CI/CD security scanning: Bandit (SAST), Safety (dependencies), Gitleaks (secrets)
 
 ## License
 
