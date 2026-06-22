@@ -1,0 +1,64 @@
+{% extends "base.html" %}
+{% block title %}Admin Organizations — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-3xl font-bold">Organizations</h1>
+        <form method="GET" class="flex items-center gap-2">
+            <input type="text" name="search" value="{{ search }}"
+                   class="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-brand-500 outline-none"
+                   placeholder="Search organizations...">
+            <button type="submit" class="bg-brand-600 text-white px-4 py-2 rounded-xl font-medium">Search</button>
+        </form>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <table class="w-full">
+            <thead>
+                <tr class="text-left text-sm font-medium text-gray-500 border-b border-gray-200 dark:border-gray-700">
+                    <th class="px-6 py-3">Name</th>
+                    <th class="px-6 py-3">Slug</th>
+                    <th class="px-6 py-3">Plan</th>
+                    <th class="px-6 py-3">Members</th>
+                    <th class="px-6 py-3">Owner</th>
+                    <th class="px-6 py-3">Created</th>
+                    <th class="px-6 py-3"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                {% for org in orgs.items %}
+                <tr class="text-sm">
+                    <td class="px-6 py-4 font-medium">{{ org.name }}</td>
+                    <td class="px-6 py-4 text-gray-500">{{ org.slug }}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-0.5 rounded-full text-xs font-medium capitalize
+                            {{ 'bg-gray-100 text-gray-700' if org.subscription_tier == 'free' else 'bg-brand-100 text-brand-700' }}">
+                            {{ org.subscription_tier }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">{{ org.member_count }}</td>
+                    <td class="px-6 py-4">{{ org.owner.email }}</td>
+                    <td class="px-6 py-4">{{ org.created_at.strftime('%b %d, %Y') }}</td>
+                    <td class="px-6 py-4">
+                        <a href="/admin/organizations/{{ org.id }}" class="text-brand-600 hover:text-brand-700 font-medium">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if orgs.pages > 1 %}
+    <div class="flex justify-center gap-2 mt-6">
+        {% for page in orgs.iter_pages() %}
+        {% if page %}
+        <a href="?page={{ page }}&search={{ search }}"
+           class="px-4 py-2 rounded-lg {{ 'bg-brand-600 text-white' if page == orgs.page else 'bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50' }}">
+            {{ page }}
+        </a>
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

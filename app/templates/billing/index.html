@@ -1,0 +1,116 @@
+{% extends "base.html" %}
+{% block title %}Billing — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-bold">Billing</h1>
+            <p class="text-gray-500 dark:text-gray-400 mt-1">Manage your subscription and billing</p>
+        </div>
+        {% if subscription and subscription.stripe_customer_id %}
+        <a href="/billing/customer-portal" class="border border-gray-300 dark:border-gray-600 px-5 py-2.5 rounded-xl font-semibold hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors">
+            Customer Portal
+        </a>
+        {% endif %}
+    </div>
+
+    {% if subscription %}
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-8">
+        <div class="flex items-center justify-between mb-4">
+            <div>
+                <h2 class="text-xl font-semibold capitalize">Current Plan: {{ subscription.plan }}</h2>
+                <p class="text-gray-500 text-sm mt-1">
+                    Status: <span class="px-2 py-0.5 rounded-full text-xs font-medium
+                        {{ 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' if subscription.is_active else 'bg-yellow-100 text-yellow-700' }}">
+                        {{ subscription.status }}
+                    </span>
+                </p>
+            </div>
+            <p class="text-3xl font-bold">
+                {% if subscription.plan == 'free' %}
+                Free
+                {% else %}
+                ${{ plans[subscription.plan].price if subscription.plan in plans else '—' }}<span class="text-lg font-normal text-gray-500">/mo</span>
+                {% endif %}
+            </p>
+        </div>
+        {% if subscription.current_period_end %}
+        <p class="text-sm text-gray-500">
+            Current period ends: {{ subscription.current_period_end.strftime('%B %d, %Y') }}
+        </p>
+        {% endif %}
+    </div>
+    {% endif %}
+
+    <h2 class="text-2xl font-bold mb-6">Available Plans</h2>
+    <div class="grid md:grid-cols-3 gap-6 mb-8">
+        {% for key, plan in plans.items() %}
+        <div class="bg-white dark:bg-gray-800 rounded-xl border p-6 {{ 'ring-2 ring-brand-600 border-brand-600' if subscription and subscription.plan == key else 'border-gray-200 dark:border-gray-700' }}">
+            <h3 class="text-xl font-semibold mb-2">{{ plan.name }}</h3>
+            <p class="text-4xl font-bold mb-4">
+                ${{ plan.price }}<span class="text-lg font-normal text-gray-500">/mo</span>
+            </p>
+            <ul class="space-y-2 mb-6">
+                {% for feature in plan.features %}
+                <li class="flex items-center gap-2 text-sm">
+                    <svg class="w-4 h-4 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                    </svg>
+                    {{ feature }}
+                </li>
+                {% endfor %}
+            </ul>
+            {% if subscription and subscription.plan == key %}
+            <span class="block w-full text-center py-2.5 rounded-xl bg-gray-100 dark:bg-gray-700 font-semibold">Current Plan</span>
+            {% elif plan.price_id %}
+            <form method="POST" action="/billing/create-checkout-session/{{ plan.price_id }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <button type="submit" class="w-full bg-brand-600 text-white py-2.5 rounded-xl font-semibold hover:bg-brand-700 transition-colors">
+                    {% if subscription %}Switch to {{ plan.name }}{% else %}Subscribe{% endif %}
+                </button>
+            </form>
+            {% else %}
+            <span class="block w-full text-center py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 font-semibold">Free</span>
+            {% endif %}
+        </div>
+        {% endfor %}
+    </div>
+
+    {% if invoices %}
+    <h2 class="text-2xl font-bold mb-4">Invoices</h2>
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <table class="w-full">
+            <thead>
+                <tr class="border-b border-gray-200 dark:border-gray-700 text-left text-sm font-medium text-gray-500">
+                    <th class="px-6 py-3">Date</th>
+                    <th class="px-6 py-3">Description</th>
+                    <th class="px-6 py-3">Amount</th>
+                    <th class="px-6 py-3">Status</th>
+                    <th class="px-6 py-3"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                {% for invoice in invoices %}
+                <tr class="text-sm">
+                    <td class="px-6 py-4">{{ invoice.created_at.strftime('%b %d, %Y') }}</td>
+                    <td class="px-6 py-4">{{ invoice.description or 'Subscription payment' }}</td>
+                    <td class="px-6 py-4 font-medium">${{ "%.2f"|format(invoice.amount_paid / 100) if invoice.amount_paid else '—' }}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-0.5 rounded-full text-xs font-medium
+                            {{ 'bg-green-100 text-green-700' if invoice.status == 'paid' else 'bg-yellow-100 text-yellow-700' }}">
+                            {{ invoice.status }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if invoice.pdf_url %}
+                        <a href="{{ invoice.pdf_url }}" target="_blank" class="text-brand-600 hover:text-brand-700 font-medium">View PDF</a>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

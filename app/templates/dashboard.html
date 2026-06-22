@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+{% block title %}Dashboard — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="flex items-center justify-between mb-8">
+        <div>
+            <h1 class="text-3xl font-bold tracking-tight">Dashboard</h1>
+            <p class="text-gray-500 dark:text-gray-400 mt-1">Welcome back, {{ current_user.name }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center shadow-sm">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197"/>
+                    </svg>
+                </div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Members</p>
+            </div>
+            <p class="text-3xl font-bold">{{ current_org.member_count if current_org else 0 }} <span class="text-lg font-normal text-gray-400">/ {{ current_org.max_members if current_org else 1 }}</span></p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-sm">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3"/>
+                    </svg>
+                </div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Plan</p>
+            </div>
+            <p class="text-3xl font-bold capitalize">{{ current_org.subscription_tier if current_org else 'Free' }}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center shadow-sm">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                    </svg>
+                </div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Status</p>
+            </div>
+            <p class="text-3xl font-bold capitalize">{{ current_org.subscription_status if current_org else 'Active' }}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
+            <div class="flex items-center gap-3 mb-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center shadow-sm">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                    </svg>
+                </div>
+                <p class="text-sm font-medium text-gray-500 dark:text-gray-400">Joined</p>
+            </div>
+            <p class="text-3xl font-bold">{{ current_user.created_at.strftime('%b %Y') if current_user.created_at else 'N/A' }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+            <h2 class="text-lg font-semibold mb-4">Quick Actions</h2>
+            <div class="space-y-2">
+                {% if current_org %}
+                <a href="/org/{{ current_org.id }}/members" class="flex items-center gap-4 p-3.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group">
+                    <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center shadow-sm group-hover:shadow transition-shadow">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium group-hover:text-brand-600 transition-colors">Invite Team Members</p>
+                        <p class="text-sm text-gray-500">Add people to your organization</p>
+                    </div>
+                </a>
+                {% else %}
+                <a href="/org/create" class="flex items-center gap-4 p-3.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group">
+                    <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-brand-400 to-brand-600 flex items-center justify-center shadow-sm group-hover:shadow transition-shadow">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium group-hover:text-brand-600 transition-colors">Create Organization</p>
+                        <p class="text-sm text-gray-500">Start by creating your first organization</p>
+                    </div>
+                </a>
+                {% endif %}
+                <a href="/billing" class="flex items-center gap-4 p-3.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group">
+                    <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-sm group-hover:shadow transition-shadow">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium group-hover:text-emerald-600 transition-colors">Manage Billing</p>
+                        <p class="text-sm text-gray-500">View plans and subscription</p>
+                    </div>
+                </a>
+                <a href="/analytics/" class="flex items-center gap-4 p-3.5 rounded-xl hover:bg-gray-50 dark:hover:bg-gray-700/50 transition-colors group">
+                    <div class="w-11 h-11 rounded-xl bg-gradient-to-br from-violet-400 to-violet-600 flex items-center justify-center shadow-sm group-hover:shadow transition-shadow">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="font-medium group-hover:text-violet-600 transition-colors">View Analytics</p>
+                        <p class="text-sm text-gray-500">Track your growth metrics</p>
+                    </div>
+                </a>
+            </div>
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 shadow-sm">
+            <h2 class="text-lg font-semibold mb-4">Plan Overview</h2>
+            {% if current_org %}
+            <div class="space-y-4">
+                <div class="flex items-center justify-between py-2">
+                    <span class="text-gray-500">Plan</span>
+                    <span class="font-semibold capitalize px-3 py-0.5 rounded-full bg-brand-50 dark:bg-brand-900/20 text-brand-700 dark:text-brand-400 text-sm">{{ current_org.subscription_tier }}</span>
+                </div>
+                <div class="h-px bg-gray-100 dark:bg-gray-700"></div>
+                <div class="flex items-center justify-between py-1">
+                    <span class="text-gray-500">Members</span>
+                    <span class="font-semibold">{{ current_org.member_count }} / {{ current_org.max_members }}</span>
+                </div>
+                <div class="h-px bg-gray-100 dark:bg-gray-700"></div>
+                {% if current_org.active_subscription %}
+                <div class="flex items-center justify-between py-1">
+                    <span class="text-gray-500">Status</span>
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-medium
+                        {{ 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' if current_org.active_subscription.is_active else 'bg-yellow-100 text-yellow-700' }}">
+                        {{ current_org.active_subscription.status }}
+                    </span>
+                </div>
+                <div class="h-px bg-gray-100 dark:bg-gray-700"></div>
+                {% if current_org.active_subscription.current_period_end %}
+                <div class="flex items-center justify-between py-1">
+                    <span class="text-gray-500">Renewal</span>
+                    <span class="font-semibold">{{ current_org.active_subscription.current_period_end.strftime('%b %d, %Y') }}</span>
+                </div>
+                <div class="h-px bg-gray-100 dark:bg-gray-700"></div>
+                {% endif %}
+                {% endif %}
+                <a href="/billing" class="block w-full text-center py-2.5 mt-2 bg-gradient-to-r from-brand-600 to-brand-500 text-white rounded-xl font-semibold hover:from-brand-700 hover:to-brand-600 transition-all shadow-sm hover:shadow-md">
+                    Manage Subscription
+                </a>
+            </div>
+            {% else %}
+            <div class="text-center py-8">
+                <svg class="w-12 h-12 text-gray-300 dark:text-gray-600 mx-auto mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/>
+                </svg>
+                <p class="text-gray-500">No organization selected.</p>
+                <a href="/org/create" class="inline-block mt-3 text-sm text-brand-600 hover:text-brand-700 font-medium">Create one</a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

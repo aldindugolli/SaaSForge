@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <style>
+        body { font-family: -apple-system, sans-serif; background: #f8fafc; margin: 0; padding: 0; }
+        .container { max-width: 600px; margin: 0 auto; padding: 40px 20px; }
+        .card { background: white; border-radius: 12px; padding: 40px; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .btn { display: inline-block; padding: 12px 32px; background: #6366f1; color: white; text-decoration: none; border-radius: 8px; font-weight: 600; }
+        .text-center { text-align: center; }
+        .mt-4 { margin-top: 24px; }
+        .text-gray { color: #64748b; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card text-center">
+            <h1 style="font-size: 24px; margin-bottom: 8px;">Welcome to SaaSForge, {{ name }}!</h1>
+            <p class="text-gray">We're thrilled to have you on board. Start building your SaaS today.</p>
+            <div class="mt-4">
+                <a href="{{ app_url }}/dashboard" class="btn">Go to Dashboard</a>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,99 @@
+{% extends "base.html" %}
+{% block title %}{{ org.name }} — Admin{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <a href="/admin/organizations" class="text-brand-600 hover:text-brand-700 font-medium mb-4 inline-block">&larr; Back to Organizations</a>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-8">
+        <h1 class="text-2xl font-bold mb-2">{{ org.name }}</h1>
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+                <p class="text-xs text-gray-500">Plan</p>
+                <p class="font-semibold capitalize">{{ org.subscription_tier }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500">Members</p>
+                <p class="font-semibold">{{ org.member_count }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500">Owner</p>
+                <p class="font-semibold">{{ org.owner.email }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500">Created</p>
+                <p class="font-semibold">{{ org.created_at.strftime('%b %d, %Y') }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-8">
+        <h2 class="text-lg font-semibold mb-4">Subscriptions</h2>
+        {% if subscriptions %}
+        <div class="space-y-3">
+            {% for sub in subscriptions %}
+            <div class="flex items-center justify-between p-3 bg-gray-50 dark:bg-gray-700/50 rounded-lg">
+                <div>
+                    <p class="font-medium capitalize">{{ sub.plan }} — {{ sub.status }}</p>
+                    <p class="text-sm text-gray-500">{{ sub.created_at.strftime('%b %d, %Y') }}</p>
+                </div>
+                <span class="px-2 py-0.5 rounded-full text-xs font-medium
+                    {{ 'bg-green-100 text-green-700' if sub.is_active else 'bg-gray-100 text-gray-700' }}">
+                    {{ sub.status }}
+                </span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-500 text-sm">No subscriptions.</p>
+        {% endif %}
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-8">
+        <h2 class="text-lg font-semibold mb-4">Invoices</h2>
+        {% if invoices %}
+        <table class="w-full text-sm">
+            <thead>
+                <tr class="text-left text-gray-500 border-b border-gray-200 dark:border-gray-700">
+                    <th class="py-2">Date</th>
+                    <th class="py-2">Amount</th>
+                    <th class="py-2">Status</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                {% for inv in invoices %}
+                <tr>
+                    <td class="py-2">{{ inv.created_at.strftime('%b %d, %Y') }}</td>
+                    <td class="py-2">${{ "%.2f"|format(inv.amount_paid / 100) if inv.amount_paid else '—' }}</td>
+                    <td class="py-2">
+                        <span class="px-2 py-0.5 rounded-full text-xs font-medium
+                            {{ 'bg-green-100 text-green-700' if inv.status == 'paid' else 'bg-yellow-100 text-yellow-700' }}">
+                            {{ inv.status }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+        {% else %}
+        <p class="text-gray-500 text-sm">No invoices.</p>
+        {% endif %}
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <h2 class="text-lg font-semibold mb-4">Audit Logs</h2>
+        {% if audit_logs %}
+        <div class="space-y-2 text-sm">
+            {% for log in audit_logs %}
+            <div class="flex items-start gap-2">
+                <span class="text-gray-400">{{ log.created_at.strftime('%b %d %H:%M') }}</span>
+                <span class="font-medium">{{ log.action }}</span>
+                <span class="text-gray-500">{{ log.actor.email if log.actor else 'System' }}</span>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-500 text-sm">No logs.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

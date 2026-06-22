@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+{% block title %}Admin Analytics — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl font-bold mb-8">Analytics</h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+            <p class="text-sm font-medium text-gray-500">Total Revenue</p>
+            <p class="text-3xl font-bold mt-1">${{ "%.2f"|format(stats.total_revenue) }}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+            <p class="text-sm font-medium text-gray-500">Active Subscriptions</p>
+            <p class="text-3xl font-bold mt-1">{{ stats.total_subscriptions }}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+            <p class="text-sm font-medium text-gray-500">Pro Users</p>
+            <p class="text-3xl font-bold mt-1">{{ stats.pro_count }}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+            <p class="text-sm font-medium text-gray-500">Business Users</p>
+            <p class="text-3xl font-bold mt-1">{{ stats.business_count }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h2 class="text-lg font-semibold mb-4">User Growth (90 days)</h2>
+            <canvas id="userGrowthChart" height="250"></canvas>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h2 class="text-lg font-semibold mb-4">Revenue Growth (180 days)</h2>
+            <canvas id="revenueChart" height="250"></canvas>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <h2 class="text-lg font-semibold mb-4">Subscription Distribution</h2>
+        <div class="w-full max-w-md mx-auto">
+            <canvas id="subChart" height="250"></canvas>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+new Chart(document.getElementById('userGrowthChart'), {
+    type: 'line',
+    data: {
+        labels: [{% for d in user_growth %}'{{ d.date }}'{{ ',' if not loop.last }}{% endfor %}],
+        datasets: [{
+            label: 'New Users',
+            data: [{% for d in user_growth %}{{ d.count }}{{ ',' if not loop.last }}{% endfor %}],
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99,102,241,0.1)',
+            fill: true,
+            tension: 0.4,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }
+    }
+});
+
+new Chart(document.getElementById('revenueChart'), {
+    type: 'bar',
+    data: {
+        labels: [{% for d in revenue_growth %}'{{ d.date }}'{{ ',' if not loop.last }}{% endfor %}],
+        datasets: [{
+            label: 'Revenue ($)',
+            data: [{% for d in revenue_growth %}{{ d.revenue }}{{ ',' if not loop.last }}{% endfor %}],
+            backgroundColor: '#6366f1',
+            borderRadius: 4,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }
+    }
+});
+
+new Chart(document.getElementById('subChart'), {
+    type: 'doughnut',
+    data: {
+        labels: Object.keys({{ subscription_dist|tojson }}),
+        datasets: [{
+            data: Object.values({{ subscription_dist|tojson }}),
+            backgroundColor: ['#e5e7eb', '#6366f1', '#4f46e5'],
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom' } }
+    }
+});
+</script>
+{% endblock %}

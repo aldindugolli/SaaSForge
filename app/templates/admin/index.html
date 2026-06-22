@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl font-bold mb-8">Admin Dashboard</h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+            <p class="text-sm font-medium text-gray-500">Total Users</p>
+            <p class="text-3xl font-bold mt-1">{{ stats.total_users }}</p>
+            <p class="text-sm text-green-600 mt-1">+{{ stats.user_growth }}% growth</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+            <p class="text-sm font-medium text-gray-500">Active Users (30d)</p>
+            <p class="text-3xl font-bold mt-1">{{ stats.active_users }}</p>
+            <p class="text-sm text-gray-500 mt-1">{{ "%.1f"|format((stats.active_users / stats.total_users * 100) if stats.total_users else 0) }}% active rate</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+            <p class="text-sm font-medium text-gray-500">MRR</p>
+            <p class="text-3xl font-bold mt-1">${{ stats.mrr }}</p>
+            <p class="text-sm text-gray-500 mt-1">Monthly Recurring Revenue</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700">
+            <p class="text-sm font-medium text-gray-500">Churn Rate</p>
+            <p class="text-3xl font-bold mt-1">{{ stats.churn_rate }}%</p>
+            <p class="text-sm text-gray-500 mt-1">Last 30 days</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h2 class="text-lg font-semibold mb-4">User Growth (30 days)</h2>
+            <canvas id="userGrowthChart" height="200"></canvas>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h2 class="text-lg font-semibold mb-4">Subscription Distribution</h2>
+            <canvas id="subChart" height="200"></canvas>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <a href="/admin/users" class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 hover:border-brand-500 transition-colors">
+            <h3 class="font-semibold mb-1">Users</h3>
+            <p class="text-sm text-gray-500">Manage all users</p>
+        </a>
+        <a href="/admin/organizations" class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 hover:border-brand-500 transition-colors">
+            <h3 class="font-semibold mb-1">Organizations</h3>
+            <p class="text-sm text-gray-500">View and manage organizations</p>
+        </a>
+        <a href="/admin/subscriptions" class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 hover:border-brand-500 transition-colors">
+            <h3 class="font-semibold mb-1">Subscriptions</h3>
+            <p class="text-sm text-gray-500">All active subscriptions</p>
+        </a>
+        <a href="/admin/payments" class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 hover:border-brand-500 transition-colors">
+            <h3 class="font-semibold mb-1">Payments</h3>
+            <p class="text-sm text-gray-500">Invoice history</p>
+        </a>
+        <a href="/admin/audit-logs" class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 hover:border-brand-500 transition-colors">
+            <h3 class="font-semibold mb-1">Audit Logs</h3>
+            <p class="text-sm text-gray-500">Track all activity</p>
+        </a>
+        <a href="/admin/analytics" class="bg-white dark:bg-gray-800 rounded-xl p-6 border border-gray-200 dark:border-gray-700 hover:border-brand-500 transition-colors">
+            <h3 class="font-semibold mb-1">Analytics</h3>
+            <p class="text-sm text-gray-500">Deep dive metrics</p>
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+new Chart(document.getElementById('userGrowthChart'), {
+    type: 'line',
+    data: {
+        labels: [{% for d in user_growth %}'{{ d.date }}'{{ ',' if not loop.last }}{% endfor %}],
+        datasets: [{
+            label: 'New Users',
+            data: [{% for d in user_growth %}{{ d.count }}{{ ',' if not loop.last }}{% endfor %}],
+            borderColor: '#6366f1',
+            backgroundColor: 'rgba(99,102,241,0.1)',
+            fill: true,
+            tension: 0.4,
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { display: false } },
+        scales: { y: { beginAtZero: true, grid: { display: false } }, x: { grid: { display: false } } }
+    }
+});
+
+new Chart(document.getElementById('subChart'), {
+    type: 'doughnut',
+    data: {
+        labels: ['Free', 'Pro', 'Business'],
+        datasets: [{
+            data: [{{ subscription_dist.free }}, {{ subscription_dist.pro }}, {{ subscription_dist.business }}],
+            backgroundColor: ['#e5e7eb', '#6366f1', '#4f46e5'],
+        }]
+    },
+    options: {
+        responsive: true,
+        plugins: { legend: { position: 'bottom' } }
+    }
+});
+</script>
+{% endblock %}

@@ -1,0 +1,138 @@
+import click
+from flask.cli import with_appcontext
+from app.core.extensions import db
+from app.core.models import User, Organization, Membership, Subscription, FeatureFlag, Role, PlanType, SubscriptionStatus
+
+
+@click.command("seed-data")
+@with_appcontext
+def seed_data():
+    """Seed the database with example data."""
+    from datetime import timedelta, timezone
+    from datetime import datetime as dt
+
+    # Check if data already exists
+    if User.query.first():
+        click.echo("Data already exists. Skipping seed.")
+        return
+
+    # Create admin user
+    admin = User(
+        id="admin-001",
+        email="admin@saasforge.com",
+        name="Admin User",
+        email_verified=True,
+        is_admin=True,
+        is_active=True,
+    )
+    admin.set_password("Admin123!")
+    db.session.add(admin)
+
+    # Create demo user
+    demo = User(
+        id="demo-001",
+        email="demo@saasforge.com",
+        name="Demo User",
+        email_verified=True,
+        is_active=True,
+    )
+    demo.set_password("Demo123!")
+    db.session.add(demo)
+
+    db.session.flush()
+
+    # Create organizations
+    admin_org = Organization(
+        id="org-admin",
+        name="SaaSForge Admin",
+        slug="saasforge-admin",
+        owner_id=admin.id,
+        subscription_tier=PlanType.BUSINESS.value,
+        max_members=100,
+    )
+
+    demo_org = Organization(
+        id="org-demo",
+        name="Demo Company",
+        slug="demo-company",
+        owner_id=demo.id,
+        subscription_tier=PlanType.PRO.value,
+        max_members=5,
+    )
+    db.session.add_all([admin_org, demo_org])
+    db.session.flush()
+
+    # Create memberships
+    db.session.add(Membership(id="mem-admin", user_id=admin.id, organization_id=admin_org.id, role=Role.OWNER.value, is_current=True))
+    db.session.add(Membership(id="mem-demo", user_id=demo.id, organization_id=demo_org.id, role=Role.OWNER.value, is_current=True))
+    db.session.flush()
+
+    # Create subscriptions
+    db.session.add(Subscription(
+        organization_id=admin_org.id,
+        plan=PlanType.BUSINESS.value,
+        status=SubscriptionStatus.ACTIVE.value,
+        current_period_start=dt.now(timezone.utc),
+        current_period_end=dt.now(timezone.utc) + timedelta(days=30),
+    ))
+    db.session.add(Subscription(
+        organization_id=demo_org.id,
+        plan=PlanType.PRO.value,
+        status=SubscriptionStatus.ACTIVE.value,
+        current_period_start=dt.now(timezone.utc),
+        current_period_end=dt.now(timezone.utc) + timedelta(days=30),
+    ))
+
+    # Create feature flags
+    flags = [
+        FeatureFlag(name="New Dashboard", key="new_dashboard", enabled=True, scope="global"),
+        FeatureFlag(name="Beta API", key="beta_api", enabled=False, scope="global"),
+        FeatureFlag(name="Dark Mode", key="dark_mode", enabled=True, scope="global"),
+    ]
+    db.session.add_all(flags)
+
+    db.session.commit()
+    click.echo("Seed data created successfully!")
+    click.echo(f"  Admin: admin@saasforge.com / Admin123!")
+    click.echo(f"  Demo:  demo@saasforge.com / Demo123!")
+
+
+@click.command("create-admin")
+@click.argument("email")
+@click.argument("password")
+@click.argument("name")
+@with_appcontext
+def create_admin(email, password, name):
+    """Create an admin user."""
+    if User.query.filter_by(email=email).first():
+        click.echo(f"User {email} already exists.")
+        return
+
+    user = User(
+        email=email,
+        name=name,
+        email_verified=True,
+        is_admin=True,
+        is_active=True,
+    )
+    user.set_password(password)
+    db.session.add(user)
+    db.session.commit()
+    click.echo(f"Admin user {email} created successfully!")
+
+
+@click.command("list-routes")
+@with_appcontext
+def list_routes():
+    """List all registered routes."""
+    from flask import current_app
+
+    rules = []
+    for rule in current_app.url_map.iter_rules():
+        methods = ",".join(sorted(rule.methods - {"HEAD", "OPTIONS"}))
+        rules.append((rule.rule, methods, rule.endpoint))
+
+    click.echo(f"{'Route':<50} {'Methods':<20} {'Endpoint':<30}")
+    click.echo("-" * 100)
+    for route, methods, endpoint in sorted(rules):
+        click.echo(f"{route:<50} {methods:<20} {endpoint:<30}")

@@ -1,0 +1,57 @@
+{% extends "base.html" %}
+{% block title %}Notifications — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-3xl font-bold">Notifications</h1>
+        {% if notifications %}
+        <a href="/notifications/read-all" class="text-sm text-brand-600 hover:text-brand-700 font-medium">Mark all as read</a>
+        {% endif %}
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <div id="notification-list">
+            {% if notifications %}
+            <div class="divide-y divide-gray-200 dark:divide-gray-700">
+                {% for notification in notifications %}
+                <div class="px-6 py-4 flex items-start gap-3 {{ 'bg-brand-50/30 dark:bg-brand-900/10' if not notification.is_read else '' }}">
+                    <div class="flex-shrink-0 mt-1">
+                        {% if notification.type == 'success' %}
+                        <div class="w-3 h-3 rounded-full bg-green-500"></div>
+                        {% elif notification.type == 'error' %}
+                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                        {% elif notification.type == 'warning' %}
+                        <div class="w-3 h-3 rounded-full bg-yellow-500"></div>
+                        {% else %}
+                        <div class="w-3 h-3 rounded-full bg-blue-500"></div>
+                        {% endif %}
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <p class="font-medium">{{ notification.title }}</p>
+                        {% if notification.message %}
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{{ notification.message }}</p>
+                        {% endif %}
+                        <p class="text-xs text-gray-400 mt-1">{{ notification.created_at | humanize }}</p>
+                    </div>
+                    {% if not notification.is_read %}
+                    <button hx-get="/notifications/{{ notification.id }}/read" hx-swap="none"
+                            class="text-xs text-brand-600 hover:text-brand-700 font-medium flex-shrink-0">
+                        Mark read
+                    </button>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="p-12 text-center text-gray-500">
+                <svg class="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/>
+                </svg>
+                <p class="text-lg font-medium">No notifications</p>
+                <p class="text-sm mt-1">You're all caught up!</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

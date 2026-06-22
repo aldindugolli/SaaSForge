@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Payments — Admin{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <h1 class="text-3xl font-bold mb-6">Payments</h1>
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <table class="w-full">
+            <thead>
+                <tr class="text-left text-sm font-medium text-gray-500 border-b border-gray-200 dark:border-gray-700">
+                    <th class="px-6 py-3">Invoice</th>
+                    <th class="px-6 py-3">Organization</th>
+                    <th class="px-6 py-3">Amount</th>
+                    <th class="px-6 py-3">Status</th>
+                    <th class="px-6 py-3">Date</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                {% for inv in invoices.items %}
+                <tr class="text-sm">
+                    <td class="px-6 py-4">{{ inv.stripe_invoice_id or inv.id[:8] }}</td>
+                    <td class="px-6 py-4">{{ inv.organization.name }}</td>
+                    <td class="px-6 py-4">${{ "%.2f"|format(inv.amount_paid / 100) if inv.amount_paid else '—' }}</td>
+                    <td class="px-6 py-4">
+                        <span class="px-2 py-0.5 rounded-full text-xs font-medium
+                            {{ 'bg-green-100 text-green-700' if inv.status == 'paid' else 'bg-yellow-100 text-yellow-700' }}">
+                            {{ inv.status }}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4">{{ inv.created_at.strftime('%b %d, %Y') }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

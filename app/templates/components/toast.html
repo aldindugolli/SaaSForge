@@ -1,0 +1,13 @@
+{% with messages = get_flashed_messages(with_categories=true) %}
+{% if messages %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        {% for category, message in messages %}
+        setTimeout(function() {
+            showToast("{{ message|e }}", "{{ category }}");
+        }, {{ loop.index0 * 500 }});
+        {% endfor %}
+    });
+</script>
+{% endif %}
+{% endwith %}

@@ -1,0 +1,65 @@
+{% extends "base.html" %}
+{% block title %}Organization Settings — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="max-w-3xl mx-auto">
+    <h1 class="text-3xl font-bold mb-2">{{ org.name }}</h1>
+    <p class="text-gray-500 mb-8">Organization settings</p>
+
+    <div class="space-y-8">
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h2 class="text-lg font-semibold mb-4">General</h2>
+            <form method="POST" class="space-y-4">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium mb-1.5">Name</label>
+                        <input type="text" name="name" value="{{ org.name }}"
+                               class="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-brand-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium mb-1.5">Slug</label>
+                        <input type="text" value="{{ org.slug }}" disabled
+                               class="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-gray-50 dark:bg-gray-700 text-gray-500 cursor-not-allowed">
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">Description</label>
+                    <textarea name="description" rows="3"
+                              class="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-brand-500 outline-none">{{ org.description or '' }}</textarea>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium mb-1.5">Website</label>
+                    <input type="url" name="website" value="{{ org.website or '' }}"
+                           class="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-brand-500 outline-none">
+                </div>
+                <button type="submit" class="bg-brand-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-brand-700">
+                    Save Changes
+                </button>
+            </form>
+        </div>
+
+        {% if org.owner_id == current_user.id %}
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+            <h2 class="text-lg font-semibold mb-4">Danger Zone</h2>
+            <p class="text-sm text-gray-500 mb-4">Transfer ownership to another member.</p>
+            <form method="POST" action="/org/{{ org.id }}/transfer" class="flex items-center gap-3">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <select name="new_owner_id" required
+                        class="flex-1 px-4 py-2.5 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-red-500 outline-none">
+                    <option value="">Select new owner...</option>
+                    {% for m in org.members %}
+                    {% if m.id != current_user.id %}
+                    <option value="{{ m.id }}">{{ m.name }} ({{ m.email }})</option>
+                    {% endif %}
+                    {% endfor %}
+                </select>
+                <button type="submit" class="bg-red-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-red-700"
+                        onclick="return confirm('Are you sure? This action cannot be undone.')">
+                    Transfer Ownership
+                </button>
+            </form>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

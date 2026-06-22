@@ -1,0 +1,78 @@
+{% extends "base.html" %}
+{% block title %}Billing History — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <h1 class="text-3xl font-bold mb-2">Billing History</h1>
+    <p class="text-gray-500 dark:text-gray-400 mb-8"></p>
+
+    <div class="space-y-8">
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-lg font-semibold">Invoices</h2>
+            </div>
+            {% if invoices %}
+            <table class="w-full">
+                <thead>
+                    <tr class="text-left text-sm font-medium text-gray-500 border-b border-gray-200 dark:border-gray-700">
+                        <th class="px-6 py-3">Date</th>
+                        <th class="px-6 py-3">Description</th>
+                        <th class="px-6 py-3">Amount</th>
+                        <th class="px-6 py-3">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for inv in invoices %}
+                    <tr class="text-sm">
+                        <td class="px-6 py-4">{{ inv.created_at.strftime('%b %d, %Y') }}</td>
+                        <td class="px-6 py-4">{{ inv.description or 'Subscription' }}</td>
+                        <td class="px-6 py-4">${{ "%.2f"|format(inv.amount_paid / 100) if inv.amount_paid else '—' }}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-0.5 rounded-full text-xs font-medium
+                                {{ 'bg-green-100 text-green-700' if inv.status == 'paid' else 'bg-yellow-100 text-yellow-700' }}">
+                                {{ inv.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="p-6 text-center text-gray-500">No invoices yet.</div>
+            {% endif %}
+        </div>
+
+        <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+            <div class="px-6 py-4 border-b border-gray-200 dark:border-gray-700">
+                <h2 class="text-lg font-semibold">Payment Events</h2>
+            </div>
+            {% if events %}
+            <table class="w-full">
+                <thead>
+                    <tr class="text-left text-sm font-medium text-gray-500 border-b border-gray-200 dark:border-gray-700">
+                        <th class="px-6 py-3">Date</th>
+                        <th class="px-6 py-3">Event</th>
+                        <th class="px-6 py-3">Status</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                    {% for event in events %}
+                    <tr class="text-sm">
+                        <td class="px-6 py-4">{{ event.created_at.strftime('%b %d, %Y %H:%M') }}</td>
+                        <td class="px-6 py-4">{{ event.type }}</td>
+                        <td class="px-6 py-4">
+                            <span class="px-2 py-0.5 rounded-full text-xs font-medium
+                                {{ 'bg-green-100 text-green-700' if event.status == 'processed' else 'bg-red-100 text-red-700' }}">
+                                {{ event.status }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+            {% else %}
+            <div class="p-6 text-center text-gray-500">No payment events yet.</div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,80 @@
+{% extends "base.html" %}
+{% block title %}Admin Users — {{ app_name }}{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-3xl font-bold">Users</h1>
+        <form method="GET" class="flex items-center gap-2">
+            <input type="text" name="search" value="{{ search }}"
+                   class="px-4 py-2 rounded-xl border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 focus:ring-2 focus:ring-brand-500 outline-none"
+                   placeholder="Search users...">
+            <button type="submit" class="bg-brand-600 text-white px-4 py-2 rounded-xl font-medium">Search</button>
+        </form>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+        <table class="w-full">
+            <thead>
+                <tr class="text-left text-sm font-medium text-gray-500 border-b border-gray-200 dark:border-gray-700">
+                    <th class="px-6 py-3">User</th>
+                    <th class="px-6 py-3">Email</th>
+                    <th class="px-6 py-3">Status</th>
+                    <th class="px-6 py-3">Role</th>
+                    <th class="px-6 py-3">Joined</th>
+                    <th class="px-6 py-3">Login</th>
+                    <th class="px-6 py-3"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200 dark:divide-gray-700">
+                {% for user in users.items %}
+                <tr class="text-sm">
+                    <td class="px-6 py-4">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-brand-600 flex items-center justify-center text-white text-xs font-medium">
+                                {{ user.name[:1] }}
+                            </div>
+                            <span class="font-medium">{{ user.name }}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4">{{ user.email }}</td>
+                    <td class="px-6 py-4">
+                        {% if user.is_banned %}
+                        <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Banned</span>
+                        {% elif not user.is_active %}
+                        <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-yellow-100 text-yellow-700">Disabled</span>
+                        {% else %}
+                        <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-700">Active</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">
+                        {% if user.is_admin %}
+                        <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">Admin</span>
+                        {% else %}
+                        <span class="text-gray-500">User</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-6 py-4">{{ user.created_at.strftime('%b %d, %Y') }}</td>
+                    <td class="px-6 py-4">{{ user.last_login_at.strftime('%b %d') if user.last_login_at else 'Never' }}</td>
+                    <td class="px-6 py-4">
+                        <a href="/admin/users/{{ user.id }}" class="text-brand-600 hover:text-brand-700 font-medium">View</a>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% if users.pages > 1 %}
+    <div class="flex justify-center gap-2 mt-6">
+        {% for page in users.iter_pages() %}
+        {% if page %}
+        <a href="?page={{ page }}&search={{ search }}"
+           class="px-4 py-2 rounded-lg {{ 'bg-brand-600 text-white' if page == users.page else 'bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 hover:bg-gray-50' }}">
+            {{ page }}
+        </a>
+        {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

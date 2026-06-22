@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}{{ app_name }} — Production-Ready SaaS Boilerplate{% endblock %}
+{% block content %}
+<div class="min-h-screen bg-gradient-to-br from-gray-50 via-white to-brand-50 dark:from-gray-900 dark:via-gray-800 dark:to-gray-900">
+    <header class="px-6 py-4">
+        <div class="max-w-7xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <div class="w-10 h-10 bg-brand-600 rounded-xl flex items-center justify-center">
+                    <span class="text-white font-bold text-lg">SF</span>
+                </div>
+                <span class="font-bold text-xl">{{ app_name }}</span>
+            </div>
+            <div class="flex items-center gap-4">
+                <button onclick="toggleTheme()" class="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700">
+                    <svg class="w-5 h-5 hidden dark:block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"/>
+                    </svg>
+                    <svg class="w-5 h-5 block dark:hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/>
+                    </svg>
+                </button>
+                <a href="/auth/login" class="text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900">Sign in</a>
+                <a href="/auth/register" class="text-sm font-medium bg-brand-600 text-white px-5 py-2.5 rounded-lg hover:bg-brand-700 transition-colors">
+                    Get Started Free
+                </a>
+            </div>
+        </div>
+    </header>
+
+    <section class="px-6 py-20 lg:py-32">
+        <div class="max-w-4xl mx-auto text-center">
+            <h1 class="text-5xl lg:text-7xl font-bold tracking-tight">
+                Build Your SaaS
+                <span class="text-brand-600">Faster</span>
+            </h1>
+            <p class="mt-6 text-xl text-gray-600 dark:text-gray-400 max-w-2xl mx-auto leading-relaxed">
+                A production-ready Flask boilerplate with authentication, team management, billing, analytics, and more.
+                Launch your SaaS in days, not months.
+            </p>
+            <div class="mt-10 flex items-center justify-center gap-4">
+                <a href="/auth/register" class="bg-brand-600 text-white px-8 py-3.5 rounded-xl text-lg font-semibold hover:bg-brand-700 transition-colors shadow-lg shadow-brand-600/25">
+                    Start Free Trial
+                </a>
+                <a href="#features" class="border border-gray-300 dark:border-gray-600 px-8 py-3.5 rounded-xl text-lg font-semibold hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors">
+                    Learn More
+                </a>
+            </div>
+            <p class="mt-4 text-sm text-gray-500">No credit card required. Free plan included.</p>
+        </div>
+    </section>
+
+    <section id="features" class="px-6 py-20">
+        <div class="max-w-6xl mx-auto">
+            <div class="grid md:grid-cols-3 gap-8">
+                <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-700">
+                    <div class="w-12 h-12 bg-brand-100 dark:bg-brand-900/30 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Authentication</h3>
+                    <p class="text-gray-600 dark:text-gray-400">Email/password and Google OAuth with email verification, password reset, and session management.</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-700">
+                    <div class="w-12 h-12 bg-brand-100 dark:bg-brand-900/30 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Team Management</h3>
+                    <p class="text-gray-600 dark:text-gray-400">Multi-tenant organizations with role-based access control, invitations, and team collaboration.</p>
+                </div>
+                <div class="bg-white dark:bg-gray-800 rounded-2xl p-8 shadow-sm border border-gray-100 dark:border-gray-700">
+                    <div class="w-12 h-12 bg-brand-100 dark:bg-brand-900/30 rounded-xl flex items-center justify-center mb-4">
+                        <svg class="w-6 h-6 text-brand-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/>
+                        </svg>
+                    </div>
+                    <h3 class="text-lg font-semibold mb-2">Subscription Billing</h3>
+                    <p class="text-gray-600 dark:text-gray-400">Stripe integration with checkout, customer portal, webhooks, invoices, and plan management.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="px-6 py-20 bg-white dark:bg-gray-800">
+        <div class="max-w-6xl mx-auto text-center">
+            <h2 class="text-3xl font-bold mb-12">Pricing Plans</h2>
+            <div class="grid md:grid-cols-3 gap-8">
+                {% for key, plan in [('free', {'name': 'Free', 'price': 0, 'features': ['1 member', '1 project', 'Basic support']}), ('pro', {'name': 'Pro', 'price': 29, 'features': ['5 members', '10 projects', 'Priority support', 'API access', 'Analytics']}), ('business', {'name': 'Business', 'price': 99, 'features': ['Unlimited members', 'Unlimited projects', 'Dedicated support', 'API access', 'Advanced analytics', 'Custom integrations', 'SLA']})] %}
+                <div class="bg-gray-50 dark:bg-gray-900 rounded-2xl p-8 border border-gray-200 dark:border-gray-700 {{ 'ring-2 ring-brand-600 relative' if key == 'pro' else '' }}">
+                    {% if key == 'pro' %}
+                    <span class="absolute -top-3 left-1/2 -translate-x-1/2 bg-brand-600 text-white px-4 py-1 rounded-full text-sm font-medium">Popular</span>
+                    {% endif %}
+                    <h3 class="text-xl font-semibold mb-2">{{ plan.name }}</h3>
+                    <p class="text-4xl font-bold mb-6">
+                        ${{ plan.price }}<span class="text-lg font-normal text-gray-500">/mo</span>
+                    </p>
+                    <ul class="space-y-3 mb-8 text-left">
+                        {% for feature in plan.features %}
+                        <li class="flex items-center gap-2 text-sm">
+                            <svg class="w-5 h-5 text-green-500 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/>
+                            </svg>
+                            {{ feature }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                    <a href="/auth/register" class="block w-full text-center py-3 rounded-xl font-semibold {{ 'bg-brand-600 text-white hover:bg-brand-700' if key != 'free' else 'border border-gray-300 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800' }}">
+                        {{ 'Get Started' if key == 'free' else 'Subscribe' }}
+                    </a>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <footer class="px-6 py-12 border-t border-gray-200 dark:border-gray-700">
+        <div class="max-w-6xl mx-auto text-center text-sm text-gray-500">
+            <p>&copy; {{ current_year }} {{ app_name }}. All rights reserved.</p>
+        </div>
+    </footer>
+</div>
+{% endblock %}

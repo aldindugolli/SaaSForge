@@ -26,36 +26,45 @@ A production-ready Flask SaaS boilerplate — authentication, team management, s
 
 | Layer | Technology |
 |-------|-----------|
-| Backend | Python 3.13+, Flask, SQLAlchemy, Alembic |
-| Frontend | HTMX 2.x, Alpine.js 3.x, TailwindCSS, Chart.js |
-| Database | PostgreSQL 16+ |
+| Backend | Python 3.13+, Flask 3.x, SQLAlchemy 2.0, Alembic, Marshmallow, Pydantic |
+| Frontend | HTMX 2.x, Alpine.js 3.x, TailwindCSS 3.x (CDN), Chart.js 4.x |
+| Database | PostgreSQL 16+ (production), SQLite (development, auto-detected) |
 | Cache & Queue | Redis 7+ |
-| Payments | Stripe |
-| Auth | bcrypt, Authlib (Google OAuth) |
-| Tasks | RQ (Redis Queue) |
-| Infrastructure | Docker, Docker Compose, Nginx |
-| CI/CD | GitHub Actions |
-| Deployment | Railway, VPS, Cloudflare-compatible |
+| Payments | Stripe (Checkout, Customer Portal, Webhooks) |
+| Auth | bcrypt (Werkzeug), Flask-Login, Authlib (Google OAuth) |
+| Tasks | RQ (Redis Queue) with scheduled jobs |
+| Infrastructure | Docker, Docker Compose, Nginx (alpine) |
+| CI/CD | GitHub Actions (lint → test → build → deploy) |
+| Deployment | Railway, VPS |
+| Monitoring | Sentry SDK |
+| API Documentation | Flasgger + APISpec |
 
 ## Quick Start
 
 ### Prerequisites
-- Python 3.13+, PostgreSQL 16+, Redis 7+, Docker (optional)
+- Python 3.13+, Docker (optional for PostgreSQL/Redis)
 
-### Local
+### Local (SQLite — no external services)
 
 ```bash
 git clone https://github.com/aldindugolli/SaaSForge.git
 cd SaaSForge
 python -m venv venv && source venv/bin/activate  # Windows: venv\Scripts\activate
+venv\Scripts\activate                              # Windows PowerShell
 pip install -r requirements.txt
-cp .env.example .env          # Edit with your config
-flask db upgrade
-flask seed-data
-flask run
+python run.py                                       # Auto-detects SQLite, no config needed
 ```
 
-### Docker
+Then in another terminal:
+```bash
+source venv/bin/activate
+flask seed-data
+```
+
+Open http://localhost:5000
+Login with admin@saasforge.com / Admin123!
+
+### Docker (PostgreSQL + Redis)
 
 ```bash
 docker-compose up -d
@@ -63,14 +72,14 @@ docker-compose exec web flask db upgrade
 docker-compose exec web flask seed-data
 ```
 
-Open http://localhost:5000
-
 ### Demo Credentials
 
 | Email | Password | Role |
 |-------|----------|------|
-| admin@saasforge.com | Admin123! | Admin |
-| demo@saasforge.com | Demo123! | User |
+| admin@saasforge.com | Admin123! | Admin + Org Owner |
+| demo@saasforge.com | Demo123! | User + Org Owner |
+
+> **Note:** `python run.py` automatically switches to SQLite (`LocalConfig`) when `DATABASE_URL` is not set or is not PostgreSQL. For PostgreSQL/Redis, set `DATABASE_URL` and `REDIS_URL` env vars and the app uses the full `Config` class.
 
 ## Project Structure
 
@@ -78,27 +87,28 @@ Open http://localhost:5000
 saasforge/
 ├── app/
 │   ├── admin/           # Admin dashboard routes & views
-│   ├── analytics/       # Analytics endpoints
-│   ├── api/             # REST API v1
-│   ├── auth/            # Authentication (login, register, OAuth)
+│   ├── analytics/       # Analytics endpoints + Chart.js
+│   ├── api/             # REST API v1 (API key auth)
+│   ├── auth/            # Authentication (login, register, OAuth, password reset)
 │   ├── billing/         # Stripe billing & webhooks
-│   ├── core/            # Config, models, extensions, CLI, error handlers
+│   ├── core/            # Config, models (11), extensions, CLI, error handlers
 │   ├── notifications/   # In-app notification system
 │   ├── organizations/   # Team management & invitations
-│   ├── services/        # Business logic layer (service classes)
-│   ├── static/          # CSS, JS, images
-│   └── templates/       # Jinja2 templates (20+ pages)
-├── tests/               # pytest unit & integration tests
+│   ├── services/        # Business logic layer (8 service classes)
+│   ├── static/          # CSS, JS
+│   └── templates/       # Jinja2 templates (30+ pages)
+├── tests/               # 35+ pytest unit & integration tests
 ├── migrations/          # Alembic migration config
 ├── docker/              # Nginx config for production
 ├── .github/workflows/   # CI/CD pipeline
-├── Dockerfile
-├── docker-compose.yml   # Dev setup
-├── docker-compose.prod.yml
-├── requirements.txt
-├── pyproject.toml
+├── Dockerfile           # Multi-stage build (gunicorn + gevent)
+├── docker-compose.yml   # Dev: web + worker + scheduler + db + redis
+├── docker-compose.prod.yml  # + nginx
+├── requirements.txt     # 82 pinned dependencies
+├── pyproject.toml       # Ruff, Black, mypy, pytest config
 ├── railway.json
-└── .pre-commit-config.yaml
+├── run.py               # Dev entrypoint (auto SQLite)
+└── wsgi.py              # Production entrypoint (gunicorn)
 ```
 
 ## Architecture
@@ -124,13 +134,26 @@ Organization
 
 Data is isolated by `organization_id` on all resources.
 
+### Services
+
+| Service | Responsibility |
+|---------|---------------|
+| `AuthService` | Register, login, password management, email verification, Google OAuth |
+| `OrganizationService` | Org CRUD, invitations, member roles, ownership transfer |
+| `BillingService` | Stripe Checkout, Customer Portal, webhook handling (6 event types) |
+| `AnalyticsService` | Dashboard stats, user/revenue growth, churn, MRR, plan distribution |
+| `EmailService` | SendGrid with dev log fallback, 5 email templates |
+| `NotificationService` | In-app notifications CRUD, unread count, bulk create |
+| `AuditService` | Audit logging with decorator support, searchable logs |
+| `BaseService[T]` | Generic CRUD base class for data access |
+
 ### Background Jobs
 
-Jobs in `app/jobs.py` run via RQ workers:
-- `send_email_job` — async email delivery
+Jobs in `app/jobs.py` run via RQ workers on the `saasforge-jobs` queue:
+- `send_email_job` / `send_verification_email_job` — async email delivery
 - `process_analytics_job` — periodic analytics processing
-- `cleanup_expired_data_job` — expired invitations/tokens
-- `generate_weekly_report_job` — admin digest
+- `cleanup_expired_data_job` — expired invitations/tokens cleanup
+- `generate_weekly_report_job` — admin digest notifications
 
 ## API
 
@@ -183,8 +206,19 @@ docker-compose -f docker-compose.prod.yml up -d
 
 ### Environment Variables
 
-See `.env.example` for all 30+ config options covering:
-- Flask, database, Redis, Stripe, Google OAuth, SendGrid, Sentry, rate limiting, sessions, feature flags
+See `.env.example` for all 55 config options covering:
+- Flask (secret key, debug, session lifetime)
+- Database (PostgreSQL URL, pool settings)
+- Redis (URL for session store + RQ)
+- Stripe (secret key, webhook secret, price IDs)
+- Auth (Google OAuth client ID/secret)
+- Email (SendGrid API key, sender)
+- Monitoring (Sentry DSN)
+- Rate limiting (default, storage backend)
+- Feature flags
+- Upload settings (max size, allowed extensions)
+
+> **Local dev:** `python run.py` needs no env vars — it auto-selects SQLite, disables CSRF/rate limiting, and logs emails to console. Set `DATABASE_URL=postgresql://...` to run against PostgreSQL.
 
 ## Testing
 

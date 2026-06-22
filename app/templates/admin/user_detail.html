@@ -1,0 +1,91 @@
+{% extends "base.html" %}
+{% block title %}{{ user.name }} — Admin{% endblock %}
+{% block content %}
+<div class="max-w-5xl mx-auto">
+    <a href="/admin/users" class="text-brand-600 hover:text-brand-700 font-medium mb-4 inline-block">&larr; Back to Users</a>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6 mb-8">
+        <div class="flex items-start justify-between">
+            <div class="flex items-center gap-4">
+                <div class="w-16 h-16 rounded-full bg-brand-600 flex items-center justify-center text-white text-xl font-bold">
+                    {{ user.name[:1] }}{{ user.name.split()[-1][:1] if ' ' in user.name else '' }}
+                </div>
+                <div>
+                    <h1 class="text-2xl font-bold">{{ user.name }}</h1>
+                    <p class="text-gray-500">{{ user.email }}</p>
+                    <div class="flex items-center gap-2 mt-1">
+                        <span class="px-2 py-0.5 rounded-full text-xs font-medium
+                            {{ 'bg-green-100 text-green-700' if user.is_active and not user.is_banned else 'bg-red-100 text-red-700' }}">
+                            {{ 'Active' if user.is_active and not user.is_banned else 'Inactive' }}
+                        </span>
+                        {% if user.is_admin %}
+                        <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-700">Admin</span>
+                        {% endif %}
+                        {% if user.is_banned %}
+                        <span class="px-2 py-0.5 rounded-full text-xs font-medium bg-red-100 text-red-700">Banned</span>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                {% if not user.is_banned %}
+                <form method="POST" action="/admin/users/{{ user.id }}/ban" class="inline">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <input type="text" name="reason" placeholder="Ban reason..." class="px-3 py-1.5 text-sm rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700" required>
+                    <button type="submit" class="bg-red-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-red-700">Ban</button>
+                </form>
+                {% else %}
+                <form method="POST" action="/admin/users/{{ user.id }}/unban">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="bg-green-600 text-white px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-green-700">Unban</button>
+                </form>
+                {% endif %}
+                <form method="POST" action="/admin/users/{{ user.id }}/disable">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="border border-gray-300 dark:border-gray-600 px-4 py-1.5 rounded-lg text-sm font-medium hover:bg-gray-50 dark:hover:bg-gray-700">
+                        {{ 'Disable' if user.is_active else 'Enable' }}
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 mt-6">
+            <div>
+                <p class="text-xs text-gray-500">Login Count</p>
+                <p class="font-semibold">{{ user.login_count or 0 }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500">Last Login</p>
+                <p class="font-semibold">{{ user.last_login_at.strftime('%b %d, %Y %H:%M') if user.last_login_at else 'Never' }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500">Joined</p>
+                <p class="font-semibold">{{ user.created_at.strftime('%b %d, %Y') if user.created_at else 'N/A' }}</p>
+            </div>
+            <div>
+                <p class="text-xs text-gray-500">Email Verified</p>
+                <p class="font-semibold">{{ 'Yes' if user.email_verified else 'No' }}</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-xl border border-gray-200 dark:border-gray-700 p-6">
+        <h2 class="text-lg font-semibold mb-4">Activity Log</h2>
+        {% if audit_logs %}
+        <div class="space-y-3">
+            {% for log in audit_logs %}
+            <div class="flex items-start gap-3 text-sm">
+                <div class="w-2 h-2 rounded-full bg-brand-500 mt-1.5"></div>
+                <div class="flex-1">
+                    <p class="font-medium">{{ log.action }}</p>
+                    <p class="text-gray-500 text-xs">{{ log.created_at.strftime('%b %d, %Y %H:%M:%S') }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% else %}
+        <p class="text-gray-500 text-sm">No activity logged.</p>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

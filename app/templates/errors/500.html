@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}Server Error{% endblock %}
+{% block content %}
+<div class="min-h-[60vh] flex items-center justify-center">
+    <div class="text-center">
+        <h1 class="text-8xl font-bold text-red-600">500</h1>
+        <h2 class="text-2xl font-semibold mt-4">Something went wrong</h2>
+        <p class="text-gray-500 dark:text-gray-400 mt-2">Our team has been notified. Please try again later.</p>
+        <a href="/" class="inline-block mt-6 bg-brand-600 text-white px-6 py-2.5 rounded-xl font-semibold hover:bg-brand-700 transition-colors">
+            Go Home
+        </a>
+    </div>
+</div>
+{% endblock %}
