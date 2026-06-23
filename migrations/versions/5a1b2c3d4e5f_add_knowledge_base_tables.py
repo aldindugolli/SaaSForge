@@ -107,8 +107,8 @@ def upgrade():
         sa.Column("active_users", sa.Integer(), nullable=False, server_default=sa.text("0")),
         sa.Column("created_at", sa.DateTime(), nullable=False, server_default=sa.text("CURRENT_TIMESTAMP")),
         sa.Column("updated_at", sa.DateTime(), nullable=False, server_default=sa.text("CURRENT_TIMESTAMP")),
+        sa.UniqueConstraint("organization_id", "date", name="uq_knowledge_usage_org_date"),
     )
-    op.create_unique_constraint("uq_knowledge_usage_org_date", "knowledge_usage", ["organization_id", "date"])
 
 
 def downgrade():
