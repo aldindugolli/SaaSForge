@@ -343,7 +343,7 @@ class KnowledgeService:
                     "type": d.type,
                     "size": d.size,
                     "word_count": d.word_count,
-                    "created_at": d.created_at.isoformat(),
+                    "created_at": d.created_at,
                 }
                 for d in recent_docs
             ],
@@ -352,7 +352,7 @@ class KnowledgeService:
                     "id": c.id,
                     "title": c.title,
                     "message_count": c.message_count,
-                    "created_at": c.created_at.isoformat(),
+                    "created_at": c.created_at,
                 }
                 for c in recent_convs
             ],
