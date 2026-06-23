@@ -75,7 +75,7 @@ def upgrade():
 
         # Build combined tsvector expression
         columns_expr = " || ' ' || ".join(
-            f"setweight(to_tsvector('english', COALESCE({col}, '')), '{weight}')"
+            f"setweight(to_tsvector('english', COALESCE(NEW.{col}, '')), '{weight}')"
             for col, weight in config["columns"]
         )
 

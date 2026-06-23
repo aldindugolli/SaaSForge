@@ -81,7 +81,7 @@ class User(UserMixin, db.Model):
     google_id = db.Column(db.String(255), unique=True, nullable=True)
 
     totp_secret = db.Column(db.String(32), nullable=True)
-    totp_enabled = db.Column(db.Boolean, default=False, nullable=False, server_default=db.text("0"))
+    totp_enabled = db.Column(db.Boolean, default=False, nullable=False, server_default=db.text("false"))
     totp_backup_codes = db.Column(db.JSON, nullable=True)
 
     password_reset_token = db.Column(db.String(255), nullable=True)
