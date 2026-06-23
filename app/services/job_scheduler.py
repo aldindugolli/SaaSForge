@@ -2,8 +2,6 @@ import logging
 from collections.abc import Callable
 from datetime import UTC, datetime, timedelta
 
-from rq.job import Job
-
 from app.core.extensions import db, rq
 from app.core.models import JobRecord
 
@@ -21,6 +19,8 @@ class JobScheduler:
 
     @staticmethod
     def _queue(name: str = QUEUE_DEFAULT):
+        if rq is None:
+            raise RuntimeError("RQ is not available (flask_rq2 import failed)")
         return rq.get_queue(name)
 
     @staticmethod
@@ -60,7 +60,10 @@ class JobScheduler:
 
     @staticmethod
     def get_status(rq_job_id: str) -> str | None:
+        if rq is None:
+            return None
         try:
+            from rq.job import Job
             job = Job.fetch(rq_job_id, connection=rq.get_connection())
             return job.get_status()
         except Exception:
@@ -68,7 +71,10 @@ class JobScheduler:
 
     @staticmethod
     def cancel(rq_job_id: str) -> bool:
+        if rq is None:
+            return False
         try:
+            from rq.job import Job
             job = Job.fetch(rq_job_id, connection=rq.get_connection())
             job.cancel()
             JobRecord.query.filter_by(rq_job_id=rq_job_id).update({"status": "canceled"})

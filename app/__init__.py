@@ -46,7 +46,8 @@ def initialize_extensions(app):
     csrf.init_app(app)
 
     limiter.init_app(app)
-    rq.init_app(app)
+    if rq is not None:
+        rq.init_app(app)
     cache.init_app(app)
     swagger.init_app(app)
 

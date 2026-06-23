@@ -6,19 +6,26 @@ from app.services.email_service import EmailService
 from app.services.notification_service import NotificationService
 
 
-@rq.job("saasforge-jobs")
+def _job(queue):
+    """Return a no-op decorator if rq is not available."""
+    if rq is None:
+        return lambda f: f
+    return rq.job(queue)
+
+
+@_job("saasforge-jobs")
 def send_email_job(to: str, subject: str, html_body: str):
     """Send an email as a background job."""
     return EmailService.send_email(to, subject, html_body)
 
 
-@rq.job("saasforge-jobs")
+@_job("saasforge-jobs")
 def send_verification_email_job(user_id: str, email: str, verify_url: str):
     """Send verification email in background."""
     return EmailService.send_verification_email(email, verify_url)
 
 
-@rq.job("saasforge-jobs")
+@_job("saasforge-jobs")
 def process_analytics_job(organization_id: str):
     """Process analytics data for an organization."""
     from app.services.analytics_service import AnalyticsService
@@ -26,7 +33,7 @@ def process_analytics_job(organization_id: str):
     return {"status": "processed", "organization_id": organization_id}
 
 
-@rq.job("saasforge-jobs")
+@_job("saasforge-jobs")
 def cleanup_expired_data_job():
     """Clean up expired invitations, tokens, etc."""
     from app.core.extensions import db
@@ -34,7 +41,6 @@ def cleanup_expired_data_job():
 
     now = datetime.now(UTC)
 
-    # Clean expired invitations
     expired = Invitation.query.filter(
         Invitation.expires_at < now,
         Invitation.accepted_at.is_(None),
@@ -47,7 +53,7 @@ def cleanup_expired_data_job():
     return {"cleaned": count, "type": "expired_invitations"}
 
 
-@rq.job("saasforge-jobs")
+@_job("saasforge-jobs")
 def generate_weekly_report_job():
     """Generate and send weekly analytics report to admins."""
 
