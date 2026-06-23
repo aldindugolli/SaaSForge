@@ -1,0 +1,124 @@
+{% extends "base.html" %}
+{% block title %}Knowledge Analytics - {{ app_name }}{% endblock %}
+{% block extra_head %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.7/dist/chart.umd.min.js"></script>
+{% endblock %}
+{% block content %}
+<div class="max-w-7xl mx-auto">
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Knowledge Analytics</h1>
+
+    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Documents Today</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ usage.today.documents_uploaded }}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Searches Today</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ usage.today.searches_performed }}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Chat Messages Today</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ usage.today.chat_messages }}</p>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5">
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">AI Tokens Today</p>
+            <p class="text-2xl font-bold text-gray-900 dark:text-white">{{ usage.today.ai_tokens_used }}</p>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+            <h2 class="text-sm font-semibold text-gray-900 dark:text-white mb-1">Monthly Summary</h2>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">Last 30 days</p>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-xs text-gray-500">Documents</p>
+                    <p class="text-lg font-bold text-gray-900 dark:text-white">{{ usage.monthly.documents }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500">Searches</p>
+                    <p class="text-lg font-bold text-gray-900 dark:text-white">{{ usage.monthly.searches }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500">Messages</p>
+                    <p class="text-lg font-bold text-gray-900 dark:text-white">{{ usage.monthly.messages }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500">Tokens</p>
+                    <p class="text-lg font-bold text-gray-900 dark:text-white">{{ usage.monthly.tokens }}</p>
+                </div>
+            </div>
+        </div>
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+            <h2 class="text-sm font-semibold text-gray-900 dark:text-white mb-1">Total Storage</h2>
+            <p class="text-xs text-gray-500 dark:text-gray-400 mb-4">All time</p>
+            <div class="grid grid-cols-2 gap-4">
+                <div>
+                    <p class="text-xs text-gray-500">Total Documents</p>
+                    <p class="text-lg font-bold text-gray-900 dark:text-white">{{ usage.totals.documents }}</p>
+                </div>
+                <div>
+                    <p class="text-xs text-gray-500">Conversations</p>
+                    <p class="text-lg font-bold text-gray-900 dark:text-white">{{ usage.totals.conversations }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6">
+        <h2 class="text-sm font-semibold text-gray-900 dark:text-white mb-4">Usage Trend (30 days)</h2>
+        <canvas id="usageChart" height="80"></canvas>
+    </div>
+</div>
+{% endblock %}
+{% block extra_scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const ctx = document.getElementById('usageChart');
+    if (!ctx) return;
+    const data = {{ chart_data|tojson }};
+    if (!data.dates || data.dates.length === 0) return;
+    new Chart(ctx, {
+        type: 'line',
+        data: {
+            labels: data.dates,
+            datasets: [
+                {
+                    label: 'Documents',
+                    data: data.documents,
+                    borderColor: '#6366f1',
+                    backgroundColor: 'rgba(99,102,241,0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Searches',
+                    data: data.searches,
+                    borderColor: '#22c55e',
+                    backgroundColor: 'rgba(34,197,94,0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Messages',
+                    data: data.messages,
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245,158,11,0.1)',
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: true, position: 'bottom' } },
+            scales: {
+                y: { beginAtZero: true, ticks: { stepSize: 1 } },
+                x: { ticks: { maxTicksLimit: 10 } }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

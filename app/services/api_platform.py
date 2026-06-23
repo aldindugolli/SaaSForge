@@ -31,6 +31,8 @@ class APIPermission(StrEnum):
     WEBHOOKS_WRITE = "webhooks:write"
     AUDIT_READ = "audit:read"
     API_KEYS_WRITE = "api_keys:write"
+    KNOWLEDGE_READ = "knowledge:read"
+    KNOWLEDGE_WRITE = "knowledge:write"
 
 
 # ─── Scoped Permission Checking ────────────────────────────────────────────────
@@ -42,6 +44,7 @@ SCOPE_PERMISSIONS: dict[str, list[str]] = {
         APIPermission.READ_BILLING.value,
         APIPermission.WEBHOOKS_READ.value,
         APIPermission.AUDIT_READ.value,
+        APIPermission.KNOWLEDGE_READ.value,
     ],
     "write": [
         APIPermission.READ_USERS.value,
@@ -50,10 +53,14 @@ SCOPE_PERMISSIONS: dict[str, list[str]] = {
         APIPermission.WRITE_MEMBERS.value,
         APIPermission.WEBHOOKS_WRITE.value,
         APIPermission.API_KEYS_WRITE.value,
+        APIPermission.KNOWLEDGE_READ.value,
+        APIPermission.KNOWLEDGE_WRITE.value,
     ],
     "admin": [
         APIPermission.ADMIN_ANALYTICS.value,
         APIPermission.ADMIN_USERS.value,
+        APIPermission.KNOWLEDGE_READ.value,
+        APIPermission.KNOWLEDGE_WRITE.value,
     ],
     "full": [
         APIPermission.READ_USERS.value,
@@ -67,6 +74,8 @@ SCOPE_PERMISSIONS: dict[str, list[str]] = {
         APIPermission.AUDIT_READ.value,
         APIPermission.API_KEYS_WRITE.value,
         APIPermission.ADMIN_ANALYTICS.value,
+        APIPermission.KNOWLEDGE_READ.value,
+        APIPermission.KNOWLEDGE_WRITE.value,
     ],
 }
 

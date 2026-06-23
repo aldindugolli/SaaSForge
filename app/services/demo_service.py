@@ -268,6 +268,47 @@ def create_seed_data() -> list[dict]:
         db.session.add_all(flags)
         created.append({"type": "feature_flags", "count": len(flags)})
 
+    org_demo = orgs.get("demo-company")
+    if org_demo:
+        from app.knowledge.models import KnowledgeCollection, KnowledgeConversation, KnowledgeMessage
+        from app.knowledge.services import KnowledgeService
+        existing_collections = KnowledgeCollection.query.filter_by(organization_id=org_demo.id).count()
+        if existing_collections == 0:
+            collections_data = [
+                {"name": "Financial Reports", "description": "Quarterly financial documents and reports"},
+                {"name": "Product Documentation", "description": "Technical docs and product guides"},
+                {"name": "HR Policies", "description": "Company policies and HR documents"},
+            ]
+            demo_user = User.query.filter_by(email="demo@saasforge.com").first()
+            if demo_user:
+                for cd in collections_data:
+                    KnowledgeService.create_collection(
+                        org_demo.id, demo_user.id, cd["name"], cd["description"]
+                    )
+                created.append({"type": "knowledge_collections", "count": len(collections_data)})
+
+        existing_convs = KnowledgeConversation.query.filter_by(organization_id=org_demo.id).count()
+        if existing_convs == 0:
+            demo_user = User.query.filter_by(email="demo@saasforge.com").first()
+            if demo_user:
+                conv1 = KnowledgeService.create_conversation(
+                    org_demo.id, demo_user.id, "Q1 Financial Analysis"
+                )
+                conv2 = KnowledgeService.create_conversation(
+                    org_demo.id, demo_user.id, "Product Roadmap Questions"
+                )
+                db.session.flush()
+                sample_messages = [
+                    KnowledgeMessage(conversation_id=conv1.id, role="user", content="What were our Q1 revenue numbers?"),
+                    KnowledgeMessage(conversation_id=conv1.id, role="assistant", content="Based on the financial reports, Q1 revenue showed a 15% growth compared to Q4. Total revenue was $2.4M, driven primarily by the Enterprise segment which grew 22% quarter-over-quarter. The Professional Services division also contributed significantly with 3 new strategic accounts.", citations=[{"document_name": "Q1_2025_Financial_Report.pdf", "snippet": "Q1 revenue reached $2.4M representing 15% growth..."}]),
+                    KnowledgeMessage(conversation_id=conv2.id, role="user", content="What features are planned for the next release?"),
+                    KnowledgeMessage(conversation_id=conv2.id, role="assistant", content="According to the product documentation, the next release (v3.2) focuses on three major areas: 1) Enhanced API with webhook support, 2) Advanced analytics dashboard with custom reports, and 3) Improved team collaboration features including real-time editing.", citations=[{"document_name": "Product_Roadmap_2025.md", "snippet": "v3.2 Release: API enhancements, analytics, team collaboration..."}]),
+                ]
+                db.session.add_all(sample_messages)
+                for conv in [conv1, conv2]:
+                    conv.message_count = KnowledgeMessage.query.filter_by(conversation_id=conv.id).count()
+                created.append({"type": "knowledge_conversations", "count": 2})
+
     user_count = User.query.count()
     if user_count <= len(DEMO_ACCOUNTS):
         for i in range(5):

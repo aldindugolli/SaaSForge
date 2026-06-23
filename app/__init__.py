@@ -57,6 +57,7 @@ def initialize_extensions(app):
 
     with app.app_context():
         import app.core.models  # noqa: F401  ensure models registered
+        import app.knowledge.models  # noqa: F401  ensure knowledge models registered
         import app.services.webhook_service  # noqa: F401
 
 
@@ -67,6 +68,7 @@ def register_blueprints(app):
     from app.auth.routes import auth_bp
     from app.billing.routes import billing_bp
     from app.core.routes import core_bp
+    from app.knowledge import knowledge_bp
     from app.notifications.routes import notifications_bp
     from app.organizations.routes import org_bp
     from app.security.routes import security_bp
@@ -78,6 +80,7 @@ def register_blueprints(app):
     app.register_blueprint(billing_bp, url_prefix="/billing")
     app.register_blueprint(admin_bp, url_prefix="/admin")
     app.register_blueprint(analytics_bp, url_prefix="/analytics")
+    app.register_blueprint(knowledge_bp)
     app.register_blueprint(notifications_bp, url_prefix="/notifications")
     app.register_blueprint(api_bp, url_prefix="/api/v1")
     app.register_blueprint(security_bp)
@@ -196,6 +199,14 @@ def register_shell_context(app):
             Subscription,
             User,
         )
+        from app.knowledge.models import (
+            DocumentChunk,
+            KnowledgeCollection,
+            KnowledgeConversation,
+            KnowledgeDocument,
+            KnowledgeMessage,
+            KnowledgeUsage,
+        )
         from app.services.webhook_service import (
             CustomerWebhookEndpoint,
             WebhookDelivery,
@@ -212,6 +223,12 @@ def register_shell_context(app):
             "WebhookEndpoint": CustomerWebhookEndpoint,
             "WebhookDelivery": WebhookDelivery,
             "WebhookEventLog": WebhookEventLog,
+            "KnowledgeDocument": KnowledgeDocument,
+            "KnowledgeCollection": KnowledgeCollection,
+            "DocumentChunk": DocumentChunk,
+            "KnowledgeConversation": KnowledgeConversation,
+            "KnowledgeMessage": KnowledgeMessage,
+            "KnowledgeUsage": KnowledgeUsage,
         }
 
 

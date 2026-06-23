@@ -27,6 +27,14 @@ class EntitlementService:
         return EntitlementService.get_plan_config(org).get("max_projects", 1)
 
     @staticmethod
+    def max_documents(org: Organization | None = None) -> int:
+        return EntitlementService.get_plan_config(org).get("max_documents", 100)
+
+    @staticmethod
+    def max_searches(org: Organization | None = None) -> int:
+        return EntitlementService.get_plan_config(org).get("max_searches", 500)
+
+    @staticmethod
     def can_add_member(org: Organization | None = None) -> bool:
         from app.core.models import Membership
         org = org or current_user.current_organization
@@ -34,6 +42,31 @@ class EntitlementService:
             return False
         current_count = Membership.query.filter_by(organization_id=org.id).count()
         return current_count < EntitlementService.max_members(org)
+
+    @staticmethod
+    def can_upload_document(org: Organization | None = None) -> bool:
+        from app.knowledge.models import KnowledgeDocument
+        org = org or current_user.current_organization
+        if not org:
+            return False
+        if not EntitlementService.has_feature("knowledge_base", org):
+            return False
+        current_count = KnowledgeDocument.query.filter_by(organization_id=org.id).count()
+        return current_count < EntitlementService.max_documents(org)
+
+    @staticmethod
+    def can_search(org: Organization | None = None) -> int:
+        from app.knowledge.models import KnowledgeUsage
+        from datetime import date
+        org = org or current_user.current_organization
+        if not org:
+            return False
+        if not EntitlementService.has_feature("knowledge_base", org):
+            return False
+        today = date.today()
+        usage = KnowledgeUsage.query.filter_by(organization_id=org.id, date=today).first()
+        searches_today = usage.searches_performed if usage else 0
+        return searches_today < EntitlementService.max_searches(org)
 
 
 def entitlement_required(feature: str):

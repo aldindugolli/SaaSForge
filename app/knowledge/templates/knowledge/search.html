@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}Search - Knowledge Base{% endblock %}
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <h1 class="text-2xl font-bold text-gray-900 dark:text-white mb-6">Search Knowledge Base</h1>
+
+    <form method="GET" class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-4 mb-6">
+        <div class="flex gap-3">
+            <div class="flex-1">
+                <input type="text" name="q" value="{{ query }}" placeholder="Search your documents..." class="w-full px-4 py-3 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent" autofocus>
+            </div>
+            <button type="submit" class="px-6 py-3 bg-brand-600 text-white text-sm font-medium rounded-xl hover:bg-brand-700 transition-colors">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+            </button>
+        </div>
+        <div class="flex items-center gap-4 mt-3">
+            <div class="flex items-center gap-2">
+                <label class="text-xs text-gray-500">Collection:</label>
+                <select name="collection_id" class="px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-xs">
+                    <option value="">All</option>
+                    {% for col in collections %}
+                    <option value="{{ col.id }}" {{ 'selected' if current_collection == col.id }}>{{ col.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div class="flex items-center gap-2">
+                <label class="text-xs text-gray-500">Mode:</label>
+                <select name="mode" class="px-2 py-1.5 rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-xs">
+                    <option value="hybrid" {{ 'selected' if mode != 'text' }}>AI Search</option>
+                    <option value="text" {{ 'selected' if mode == 'text' }}>Text Only</option>
+                </select>
+            </div>
+        </div>
+    </form>
+
+    {% if query %}
+    <div class="mb-4">
+        <p class="text-sm text-gray-500 dark:text-gray-400">{{ results|length }} result{{ 's' if results|length != 1 }} for "{{ query }}"</p>
+    </div>
+    {% endif %}
+
+    {% if results %}
+    <div class="space-y-3">
+        {% for r in results %}
+        <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-5 hover:shadow-sm transition-shadow">
+            <div class="flex items-start justify-between mb-2">
+                <div class="flex items-center gap-2">
+                    <div class="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-500 uppercase">{{ r.document_type }}</div>
+                    <a href="{{ r.document_url }}" class="text-sm font-medium text-gray-900 dark:text-white hover:text-brand-600 dark:hover:text-brand-400">{{ r.document_name }}</a>
+                </div>
+                {% if r.score %}
+                <span class="text-xs text-gray-400">Score: {{ r.score }}</span>
+                {% endif %}
+            </div>
+            <p class="text-sm text-gray-600 dark:text-gray-400 line-clamp-3">{{ r.content }}</p>
+        </div>
+        {% endfor %}
+    </div>
+    {% elif query %}
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-12 text-center">
+        <svg class="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-1">No results found</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Try different keywords or upload more documents.</p>
+    </div>
+    {% else %}
+    <div class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-12 text-center">
+        <svg class="w-12 h-12 mx-auto text-gray-300 dark:text-gray-600 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"/></svg>
+        <h3 class="text-lg font-medium text-gray-900 dark:text-white mb-1">Search your documents</h3>
+        <p class="text-sm text-gray-500 dark:text-gray-400">Enter a query above to search across all your uploaded documents.</p>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

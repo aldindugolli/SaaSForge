@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Upload Document - Knowledge Base{% endblock %}
+{% block content %}
+<div class="max-w-2xl mx-auto">
+    <div class="mb-8">
+        <a href="{{ url_for('knowledge.documents') }}" class="text-sm text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">&larr; Back to Documents</a>
+        <h1 class="text-2xl font-bold text-gray-900 dark:text-white mt-2">Upload Document</h1>
+        <p class="text-sm text-gray-500 dark:text-gray-400 mt-1">Supported formats: PDF, DOCX, TXT, Markdown</p>
+    </div>
+
+    <form method="POST" enctype="multipart/form-data" class="bg-white dark:bg-gray-800 rounded-2xl border border-gray-200 dark:border-gray-700 p-6 space-y-5">
+        <div class="border-2 border-dashed border-gray-300 dark:border-gray-600 rounded-2xl p-8 text-center hover:border-brand-500 dark:hover:border-brand-400 transition-colors cursor-pointer" onclick="document.getElementById('file-input').click()">
+            <svg class="w-10 h-10 mx-auto text-gray-400 dark:text-gray-500 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/></svg>
+            <p class="text-sm text-gray-600 dark:text-gray-400">Click to select a file or drag and drop</p>
+            <p class="text-xs text-gray-400 dark:text-gray-500 mt-1">PDF, DOCX, TXT, MD up to 50MB</p>
+            <input id="file-input" type="file" name="file" accept=".pdf,.docx,.txt,.md" class="hidden" required onchange="document.getElementById('file-name').textContent = this.files[0]?.name || 'No file selected'">
+            <p id="file-name" class="text-sm text-brand-600 dark:text-brand-400 mt-2 font-medium"></p>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Collection (optional)</label>
+            <select name="collection_id" class="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+                <option value="">No Collection</option>
+                {% for col in collections %}
+                <option value="{{ col.id }}">{{ col.name }}</option>
+                {% endfor %}
+            </select>
+        </div>
+
+        <div>
+            <label class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Tags (optional)</label>
+            <input type="text" name="tags" placeholder="comma-separated, e.g. report, finance, q1-2025" class="w-full px-3 py-2.5 rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 text-sm focus:ring-2 focus:ring-brand-500 focus:border-transparent">
+        </div>
+
+        <button type="submit" class="w-full px-4 py-3 bg-brand-600 text-white text-sm font-medium rounded-xl hover:bg-brand-700 transition-colors shadow-sm">
+            Upload &amp; Process Document
+        </button>
+    </form>
+</div>
+{% endblock %}

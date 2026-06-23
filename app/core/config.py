@@ -70,8 +70,10 @@ class Config:
             "price_id": None,
             "max_members": 1,
             "max_projects": 1,
+            "max_documents": 100,
+            "max_searches": 500,
             "features": ["Basic support"],
-            "entitlements": {"api_access": False, "analytics": False, "custom_integrations": False, "sla": False},
+            "entitlements": {"api_access": False, "analytics": False, "custom_integrations": False, "sla": False, "knowledge_base": True, "semantic_search": False, "ai_chat": False},
         },
         "pro": {
             "name": "Pro",
@@ -79,8 +81,10 @@ class Config:
             "price_id": os.environ.get("STRIPE_PRO_PRICE_ID", ""),
             "max_members": 5,
             "max_projects": 10,
-            "features": ["Priority support", "API access", "Analytics"],
-            "entitlements": {"api_access": True, "analytics": True, "custom_integrations": False, "sla": False},
+            "max_documents": 5000,
+            "max_searches": 50000,
+            "features": ["Priority support", "API access", "Analytics", "Knowledge Base", "AI Chat", "Semantic Search"],
+            "entitlements": {"api_access": True, "analytics": True, "custom_integrations": False, "sla": False, "knowledge_base": True, "semantic_search": True, "ai_chat": True},
         },
         "business": {
             "name": "Business",
@@ -88,10 +92,18 @@ class Config:
             "price_id": os.environ.get("STRIPE_BUSINESS_PRICE_ID", ""),
             "max_members": 9999,
             "max_projects": 9999,
-            "features": ["Dedicated support", "API access", "Advanced analytics", "Custom integrations", "SLA"],
-            "entitlements": {"api_access": True, "analytics": True, "custom_integrations": True, "sla": True},
+            "max_documents": 50000,
+            "max_searches": 500000,
+            "features": ["Dedicated support", "API access", "Advanced analytics", "Custom integrations", "SLA", "Knowledge Base", "AI Chat", "Semantic Search", "Priority Processing"],
+            "entitlements": {"api_access": True, "analytics": True, "custom_integrations": True, "sla": True, "knowledge_base": True, "semantic_search": True, "ai_chat": True, "priority_processing": True},
         },
     }
+
+    # Knowledge Base
+    KNOWLEDGE_UPLOAD_FOLDER = os.environ.get(
+        "KNOWLEDGE_UPLOAD_FOLDER", str(BASE_DIR / "app" / "instance" / "knowledge")
+    )
+    KNOWLEDGE_MAX_FILE_SIZE = int(os.environ.get("KNOWLEDGE_MAX_FILE_SIZE", 52428800))
 
     # Google OAuth
     GOOGLE_OAUTH_CLIENT_ID = os.environ.get("GOOGLE_OAUTH_CLIENT_ID", "")
@@ -114,7 +126,7 @@ class Config:
         "UPLOAD_FOLDER", str(BASE_DIR / "app" / "static" / "uploads")
     )
     MAX_CONTENT_LENGTH = int(os.environ.get("MAX_CONTENT_LENGTH", 5242880))
-    ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp"}
+    ALLOWED_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp", "pdf", "docx", "txt", "md"}
 
     # Sentry
     SENTRY_DSN = os.environ.get("SENTRY_DSN", "")
